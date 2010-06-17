@@ -87,7 +87,7 @@ Axis.prototype.makeNewBucket = function (name, total) {
 //   public method
 // -------------------------------------------------------------------
 Axis.prototype.getBucketFromName = function (name) {
-  for (var i = 0; i < this.bucketList.length; i += 1) {
+  for (var i = 0, l = this.bucketList.length; i < l; i += 1) {
     if (this.bucketList[i].name === name) {
       return this.bucketList[i];
     }
@@ -162,18 +162,20 @@ function DataVortex(axisList) {
   // this.nestedArraysOfData[9][22] = value;
   // -------------------------------------------------------------------
   this.getValueAt = function (listOfArrayOffsets) {
-    var i = 0;
+    var i = 0,
+        l = 0;
+    
     if ((listOfArrayOffsets === null) || (listOfArrayOffsets.length === 0) || (listOfArrayOffsets.length !== this.axisList.length)) {
       return null;
     }
-    for (i = 0; i < this.axisList.length; i += 1) {
+    for (i = 0, l = this.axisList.length; i < l; i += 1) {
       if (listOfArrayOffsets[i] === null) {
         return null; // This is where we should return the total instead of null
       }
     }
     var cellValue = null;
     var currentObject = self.nestedArraysOfData;
-    for (i = 0; i < self.axisList.length; i += 1) {
+    for (i = 0, l = self.axisList.length; i < l; i += 1) {
       if (currentObject[listOfArrayOffsets[i]]) {
         currentObject = currentObject[listOfArrayOffsets[i]];
       } else {
@@ -187,10 +189,10 @@ function DataVortex(axisList) {
 
   this.getlistOfArrayOffsets = function (bucketList) {
     var listOfArrayOffsets = [];
-    for (var i = 0; i < self.axisList.length; i += 1) {
+    for (var i = 0, l = self.axisList.length; i < l; i += 1) {
       var axisInQuestion = self.axisList[i];
       var indexAlongThisAxis = 0;
-      for (var j = 0; j < bucketList.length; j += 1) {
+      for (var j = 0, m = bucketList.length; j < m; j += 1) {
         if (axisInQuestion === bucketList[j].axis) {
           indexAlongThisAxis = bucketList[j].axisIndex;
           break;

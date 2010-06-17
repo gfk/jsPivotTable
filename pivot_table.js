@@ -93,7 +93,7 @@ function PivotTable(divId, dataVortex, rowAxes, columnAxes) {
 // an integer i such that: (array[i] == element)
 // -------------------------------------------------------------------
 PivotTable.getIndexOfElementInArray = function (element, array, addIfAbsent) {
-  for (var i = 0; i < array.length; i += 1) {
+  for (var i = 0, l = array.length; i < l; i += 1) {
     if (element === array[i]) {
       return i;
     }
@@ -113,7 +113,8 @@ PivotTable.prototype.display = function () {
   var tableDiv = document.getElementById(this.divId);
   var arrayOfStrings = [];
   var dimensionOfPivotTable = this.dataVortex.axisList.length;
-  var i = 0;
+  var i = 0,
+      l = 0;
   
   // add HTML to start table
   //arrayOfStrings.push("<h2>" + this.dataVortex.metricList[0].name + "</h2>");
@@ -140,7 +141,7 @@ PivotTable.prototype.display = function () {
     }
     arrayOfStrings.push("<th>" + "value" + "</th>");  
   } else {
-    for (var column = 0; column < this.columnAxes.length; column += 1) {
+    for (var column = 0, len = this.columnAxes.length; column < len; column += 1) {
       if (column > 0) {
         arrayOfStrings.push("<tr>");
       }
@@ -159,10 +160,10 @@ PivotTable.prototype.display = function () {
         numRepeats = this.columnAxes[i].bucketList.length * numRepeats; 
       }
       for (var repeat = 0; repeat < numRepeats; repeat += 1) {
-        for (var x = 0; x < this.columnAxes[column].bucketList.length; x += 1) { 
+        for (var x = 0, m = this.columnAxes[column].bucketList.length; x < m; x += 1) { 
           var numberOfSpannedColumnsForEachHeaderColumn = 1;
-          for (i = (column + 1); i < this.columnAxes.length; i += 1) {
-            numberOfSpannedColumnsForEachHeaderColumn = this.columnAxes[i].bucketList.length * numberOfSpannedColumnsForEachHeaderColumn; 
+          for (i = (column + 1), l = this.columnAxes.length; i < l; i += 1) {
+            numberOfSpannedColumnsForEachHeaderColumn = this.columnAxes[i].bucketList.length * numberOfSpannedColumnsForEachHeaderColumn;
           }
           arrayOfStrings.push("<th colspan=\"" + numberOfSpannedColumnsForEachHeaderColumn + "\">" + this.columnAxes[column].bucketList[x].name + "</th>"); 
         }
@@ -181,7 +182,7 @@ PivotTable.prototype.display = function () {
       // arrayOfStrings.push("<br/>" + this.getMoveAxisButtonHTML(null, null));
       arrayOfStrings.push("</th>");
     } else {
-      for (var row = 0; row < this.rowAxes.length; row += 1) {
+      for (var row = 0, n = this.rowAxes.length; row < n; row += 1) {
         arrayOfStrings.push("<th>");
         arrayOfStrings.push(this.getAxisSelectionMenuHTML(row, null));
         arrayOfStrings.push("<br/>" + this.getMoveAxisButtonHTML(row, null));
@@ -190,7 +191,7 @@ PivotTable.prototype.display = function () {
     }
     arrayOfStrings.push("<th></th>");    
     var numberOfColumnCellsSpanned = 1;
-    for (i = 0; i < this.columnAxes.length; i += 1) {
+    for (i = 0, l = this.columnAxes.length; i < l; i += 1) {
       numberOfColumnCellsSpanned = this.columnAxes[i].bucketList.length * numberOfColumnCellsSpanned; 
     }
     arrayOfStrings.push("<th colspan=\"" + numberOfColumnCellsSpanned + "\"></th>");
@@ -199,15 +200,15 @@ PivotTable.prototype.display = function () {
   
   // Create all the data rows
   var pti = new Array(this.dataVortex.axisList.length);
-  for (i = 0; i < this.dataVortex.axisList.length; i += 1) {
+  for (i = 0, l = this.dataVortex.axisList.length; i < l; i += 1) {
     pti[i] = null;
   }
   var offsetOfRow = [];
-  for (i = 0; i < this.rowAxes.length; i += 1) {
+  for (i = 0, l = this.rowAxes.length; i < l; i += 1) {
     offsetOfRow[i] = PivotTable.getIndexOfElementInArray(this.rowAxes[i], this.dataVortex.axisList);
   }
   var offsetOfColumn = [];
-  for (i = 0; i < this.columnAxes.length; i += 1) {
+  for (i = 0, l = this.columnAxes.length; i < l; i += 1) {
     offsetOfColumn[i] = PivotTable.getIndexOfElementInArray(this.columnAxes[i], this.dataVortex.axisList);
   }
   this.addRowsToArrayOfStrings(arrayOfStrings, offsetOfRow, offsetOfColumn, pti, 0, false, true);
@@ -243,13 +244,13 @@ PivotTable.prototype.addRowsToArrayOfStrings = function (arrayOfStrings, offsetO
     this.addCellsToArrayOfStrings(arrayOfStrings, offsetOfColumn, pti, 0, evenNotOdd);
     arrayOfStrings.push("</tr>");  
   } else {
-    for (var z = 0; z < this.rowAxes[rowAxisIndex].bucketList.length; z += 1) {
+    for (var z = 0, l = this.rowAxes[rowAxisIndex].bucketList.length; z < l; z += 1) {
       pti[offsetOfRow[rowAxisIndex]] = z; 
       if (!inside || z > 0) {
         arrayOfStrings.push("<tr>");
       }
       var numberOfRowsToSpan = 1;
-      for (var i = (rowAxisIndex + 1); i < this.rowAxes.length; i += 1) {
+      for (var i = (rowAxisIndex + 1), m = this.rowAxes.length; i < m; i += 1) {
         numberOfRowsToSpan = this.rowAxes[i].bucketList.length * numberOfRowsToSpan; 
       }
       arrayOfStrings.push("<th rowspan=\"" + numberOfRowsToSpan + "\">" + this.rowAxes[rowAxisIndex].bucketList[z].name  + "</th>");
@@ -292,7 +293,7 @@ PivotTable.prototype.addCellsToArrayOfStrings = function (arrayOfStrings, offset
       arrayOfStrings.push("<td class=\"" + evenOddText + "\">" + cellValue + "</td>");
     }
   } else {
-    for (var x = 0; x < this.columnAxes[columnIndex].bucketList.length; x += 1) {
+    for (var x = 0, l = this.columnAxes[columnIndex].bucketList.length; x < l; x += 1) {
       pti[offsetOfColumn[columnIndex]] = x;
       var nestedColumnIndex = columnIndex + 1;
       if (nestedColumnIndex < this.columnAxes.length) {
@@ -350,7 +351,7 @@ PivotTable.prototype.getAxisSelectionMenuHTML = function (rowNumber, columnNumbe
   var selectionMenuId = PivotTable.SELECT_MENU_ID_PREFIX + this.divId + "_" + rowNumber + "_" + columnNumber;
   var returnString = "<select id=\"" + selectionMenuId + "\" name=\"" + selectionMenuId + "\" row=\"" + rowNumber + "\" column=\"" + columnNumber + "\">";
   var selectedText;
-  for (var i = 0; i < this.dataVortex.axisList.length; i += 1) {
+  for (var i = 0, l = this.dataVortex.axisList.length; i < l; i += 1) {
     var axisOption = this.dataVortex.axisList[i];
     selectedText = (axisOption === selectedAxis) ? "selected" : "";
     returnString += "<option " + selectedText + " value=\"" + axisOption.name + "\" onclick=\"PivotTable.clickOnAxisSelectionMenu(event)\">" + axisOption.name + "</option>:";
@@ -411,12 +412,13 @@ PivotTable.clickOnLayoutButton = function (eventObject) {
 // will return a new array ["aa", "bb", "dd"]
 // -------------------------------------------------------------------
 PivotTable.copyArrayButRemoveElementAtOffset = function (array, offset) {
-  if ((array.length > 0) && (offset >= 0) && (array.length > offset)) {
-    var newArray = new Array(array.length - 1);
+  var len = array.length;
+  if ((len > 0) && (offset >= 0) && (len > offset)) {
+    var newArray = new Array(len - 1);
     for (var i = 0; i < offset; i += 1) {
       newArray[i] = array[i];
     }
-    for (var j = offset; j < (array.length - 1); j += 1) {
+    for (var j = offset; j < (len - 1); j += 1) {
       newArray[j] = array[j + 1];
     }
     return newArray;
@@ -484,7 +486,8 @@ PivotTable.clickOnMoveAxisButton = function (eventObject) {
 // controls.
 // -------------------------------------------------------------------
 PivotTable.clickOnAxisSelectionMenu = function (eventObject) {
-  var i = 0;
+  var i = 0,
+      l = 0;
   if (!eventObject) {
     eventObject = window.event;
   }
@@ -513,12 +516,12 @@ PivotTable.clickOnAxisSelectionMenu = function (eventObject) {
   var newChoiceName = htmlElement.value;
   var newChoiceAxis = pivotTable.getAxisFromName(newChoiceName);
   if (newChoiceAxis !== null) {
-    for (i = 0; i < pivotTable.rowAxes.length; i += 1) {
+    for (i = 0, l = pivotTable.rowAxes.length; i < l; i += 1) {
       if (pivotTable.rowAxes[i] === newChoiceAxis) {
         pivotTable.rowAxes[i] = displacedAxis;
       }
     }
-    for (i = 0; i < pivotTable.columnAxes.length; i += 1) {
+    for (i = 0, l = pivotTable.columnAxes.length; i < l; i += 1) {
       if (pivotTable.columnAxes[i] === newChoiceAxis) {
         pivotTable.columnAxes[i] = displacedAxis;
       }
