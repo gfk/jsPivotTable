@@ -163,12 +163,12 @@ PivotTable.prototype.display = function () {
         for (var x = 0, m = this.columnAxes[column].bucketList.length; x < m; x += 1) { 
           var numberOfSpannedColumnsForEachHeaderColumn = 1;
           for (i = (column + 1), l = this.columnAxes.length; i < l; i += 1) {
-            numberOfSpannedColumnsForEachHeaderColumn = this.columnAxes[i].bucketList.length * numberOfSpannedColumnsForEachHeaderColumn;
+            numberOfSpannedColumnsForEachHeaderColumn *= this.columnAxes[i].bucketList.length;
           }
           arrayOfStrings.push("<th colspan=\"" + numberOfSpannedColumnsForEachHeaderColumn + "\">" + this.columnAxes[column].bucketList[x].name + "</th>"); 
         }
       }
-      arrayOfStrings.push("</tr>");
+      arrayOfStrings.push("</tr>\n");
     }
   }
 
@@ -192,10 +192,10 @@ PivotTable.prototype.display = function () {
     arrayOfStrings.push("<th></th>");    
     var numberOfColumnCellsSpanned = 1;
     for (i = 0, l = this.columnAxes.length; i < l; i += 1) {
-      numberOfColumnCellsSpanned = this.columnAxes[i].bucketList.length * numberOfColumnCellsSpanned; 
+      numberOfColumnCellsSpanned *= this.columnAxes[i].bucketList.length;
     }
     arrayOfStrings.push("<th colspan=\"" + numberOfColumnCellsSpanned + "\"></th>");
-    arrayOfStrings.push("</tr>");                                  
+    arrayOfStrings.push("</tr>\n");                                  
   }
   
   // Create all the data rows
@@ -228,6 +228,43 @@ PivotTable.prototype.display = function () {
   return;
 };
 
+PivotTable.getRowsData = function (dataVortex, indice) {
+  //console.log("getRowsData(indice=" + indice + ")");
+  var findDefined = function (ary) {
+    var defined = [];
+    
+    for (var k = 0, l = ary.length; k < l; k += 1) {
+      if (ary[k] !== undefined) {
+        defined.push(k);
+      }
+    }
+    return defined;
+  };
+  
+  if (indice === null) {
+    indice = 0;
+  }
+  var foo = findDefined(dataVortex.nestedArraysOfData[0][indice]);
+  var bar = findDefined(dataVortex.nestedArraysOfData[1][indice]);
+  var baz = foo.concat(bar);
+  
+  var retour = {};
+  for (var i in baz) {
+    if (baz.hasOwnProperty(i)) {
+      retour[baz[i]] = true;
+    }
+  }
+  
+  var n = 0;
+  for (var j in retour) {
+    if (retour.hasOwnProperty(j)) {
+      n += 1;
+    }
+  }
+  retour.length = n;
+  return retour;
+};
+
 // -------------------------------------------------------------------
 // PivotTable.addRowsToArrayOfStrings()
 // -------------------------------------------------------------------
@@ -242,28 +279,30 @@ PivotTable.prototype.addRowsToArrayOfStrings = function (arrayOfStrings, offsetO
       arrayOfStrings.push("<th></th>");
     }
     this.addCellsToArrayOfStrings(arrayOfStrings, offsetOfColumn, pti, 0, evenNotOdd);
-    arrayOfStrings.push("</tr>");  
+    arrayOfStrings.push("</tr>\n");  
   } else {
+    var currentObject = PivotTable.getRowsData(this.dataVortex, pti[1]);
     for (var z = 0, l = this.rowAxes[rowAxisIndex].bucketList.length; z < l; z += 1) {
-      pti[offsetOfRow[rowAxisIndex]] = z; 
-      if (!inside || z > 0) {
-        arrayOfStrings.push("<tr>");
-      }
-      var numberOfRowsToSpan = 1;
-      for (var i = (rowAxisIndex + 1), m = this.rowAxes.length; i < m; i += 1) {
-        numberOfRowsToSpan = this.rowAxes[i].bucketList.length * numberOfRowsToSpan; 
-      }
-      arrayOfStrings.push("<th rowspan=\"" + numberOfRowsToSpan + "\">" + this.rowAxes[rowAxisIndex].bucketList[z].name  + "</th>");
-      var nestedRowIndex = rowAxisIndex + 1;
-      if (nestedRowIndex < this.rowAxes.length) {
-        evenNotOdd = !evenNotOdd;
-        this.addRowsToArrayOfStrings(arrayOfStrings, offsetOfRow, offsetOfColumn, pti, nestedRowIndex, true, evenNotOdd);
-      } else {
-        if (this.showLayoutControls) {
-          arrayOfStrings.push("<th></th>");
+      if (currentObject[z] === true) { // Only print line if at least one value is defined (avoid getting a line with zeros)
+        arrayOfStrings.push("<!-- pti=(" + pti.join(",") + ") rowAxisIndex=" + rowAxisIndex + " -->");
+        pti[offsetOfRow[rowAxisIndex]] = z; 
+        if (!inside || z > 0) {
+          arrayOfStrings.push("<tr>");
         }
-        this.addCellsToArrayOfStrings(arrayOfStrings, offsetOfColumn, pti, 0, evenNotOdd);
-        arrayOfStrings.push("</tr>");  
+        var numberOfRowsToSpan = (rowAxisIndex === 0 ? PivotTable.getRowsData(this.dataVortex, z).length : 1);
+        //if (rowAxisIndex === 0) { console.log("rowspan=" + numberOfRowsToSpan + " " + this.rowAxes[rowAxisIndex].bucketList[z].name); }
+        arrayOfStrings.push("<th rowspan=\"" + numberOfRowsToSpan + "\">" + this.rowAxes[rowAxisIndex].bucketList[z].name  + "</th>");
+        var nestedRowIndex = rowAxisIndex + 1;
+        if (nestedRowIndex < this.rowAxes.length) {
+          evenNotOdd = !evenNotOdd;
+          this.addRowsToArrayOfStrings(arrayOfStrings, offsetOfRow, offsetOfColumn, pti, nestedRowIndex, true, evenNotOdd);
+        } else {
+          if (this.showLayoutControls) {
+            arrayOfStrings.push("<th></th>");
+          }
+          this.addCellsToArrayOfStrings(arrayOfStrings, offsetOfColumn, pti, 0, evenNotOdd);
+          arrayOfStrings.push("</tr>\n");  
+        }
       }
     }
   }
