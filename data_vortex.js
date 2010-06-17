@@ -128,7 +128,7 @@ function DataVortex(axisList) {
   //   or 
   // this.nestedArraysOfData[9][22] = value;
   // -------------------------------------------------------------------
-  function setValueAt(value, listOfArrayOffsets) {
+  this.setValueAt = function (value, listOfArrayOffsets) {
     if (listOfArrayOffsets == null || listOfArrayOffsets.length == 0) {
       self.nestedArraysOfData = value;
       return;
@@ -159,22 +159,23 @@ function DataVortex(axisList) {
       return null;
     }
     for (var i = 0; i < this.axisList.length; i++) {
-      if (listOfArrayOffsets[i] == null) return null;
+      if (listOfArrayOffsets[i] == null) return null; // C'est ici qu'il faudrait retourner le total plutôt que null
     }
     var cellValue = null;
     var currentObject = self.nestedArraysOfData;
     for (var i = 0; i < self.axisList.length; i++) {
-      currentObject = currentObject[listOfArrayOffsets[i]];
+      if (currentObject[listOfArrayOffsets[i]]) {
+        currentObject = currentObject[listOfArrayOffsets[i]];
+      } else {
+        currentObject=0;
+        break;
+      }
     }
     cellValue = currentObject;
     return cellValue;
   };
 
-  // -------------------------------------------------------------------
-  // DataVortex.setValue()
-  // -------------------------------------------------------------------
-  this.setValue = function (metric, value, bucketList) {
-    // var indexOfMetric = this.getMetricIndexFromMetric(metric);
+  this.getlistOfArrayOffsets = function(bucketList) {
     var listOfArrayOffsets = new Array();
     for (var i = 0; i < self.axisList.length; i++) {
       var axisInQuestion = self.axisList[i];
@@ -187,7 +188,23 @@ function DataVortex(axisList) {
       }
       listOfArrayOffsets[i] = indexAlongThisAxis;
     }
-    setValueAt(value, listOfArrayOffsets);
+    return listOfArrayOffsets;
+  }
+
+  // -------------------------------------------------------------------
+  // DataVortex.setValue()
+  // -------------------------------------------------------------------
+  this.setValue = function (metric, value, bucketList) {
+    // var indexOfMetric = this.getMetricIndexFromMetric(metric);
+    this.setValueAt(value, this.getlistOfArrayOffsets(bucketList));
+  };
+
+  // -------------------------------------------------------------------
+  // DataVortex.getValue()
+  // -------------------------------------------------------------------
+  this.getValue = function (metric, bucketList) {
+    // var indexOfMetric = this.getMetricIndexFromMetric(metric);
+    return this.getValueAt(this.getlistOfArrayOffsets(bucketList));
   };
 }
 
