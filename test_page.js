@@ -100,7 +100,7 @@ function displayDebugText(someText) {
 //   V
 
 window.onload = onLoad;
-window.onerror = displayObjectInDebugTextarea;
+//window.onerror = displayObjectInDebugTextarea;
 // window.onresize = onWindowResize;
 
 // THE END

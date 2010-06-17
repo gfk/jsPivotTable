@@ -1,3 +1,6 @@
+/*global Bucket Datatype */
+/*jslint white: true, browser: true, devel: true, onevar: false, undef: true, nomen: true, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, newcap: true, immed: true, indent: 2 */
+
 /*****************************************************************************
  data_vortex.js
  
@@ -64,7 +67,7 @@ function Axis(name) {
 
   // Properties
   this.name = name;
-  this.bucketList = new Array();
+  this.bucketList = [];
   this.totalBucket = null;
 }
 
@@ -77,20 +80,20 @@ Axis.prototype.makeNewBucket = function (name, total) {
   this.bucketList.push(newBucket);
   newBucket.axisIndex = (this.bucketList.length - 1);
   return newBucket;
-}
+};
 
 // -------------------------------------------------------------------
 // Axis.getBucketFromName()
 //   public method
 // -------------------------------------------------------------------
 Axis.prototype.getBucketFromName = function (name) {
-  for (var i=0; i<this.bucketList.length; i++) {
-    if (this.bucketList[i].name == name) {
+  for (var i = 0; i < this.bucketList.length; i += 1) {
+    if (this.bucketList[i].name === name) {
       return this.bucketList[i];
     }
   }
   return null;
-}
+};
 
 // -------------------------------------------------------------------
 // new Bucket()
@@ -102,7 +105,7 @@ function Bucket(name, axis, total) {
   this.name = name;
   this.axis = axis;
   this.axisIndex = null;
-  this.total = (total ? true : false );
+  this.total = (total ? true : false);
 }
 
 // -------------------------------------------------------------------
@@ -113,8 +116,8 @@ function DataVortex(axisList) {
 
   // Public Properties
   this.axisList = axisList;       // Array of Axis objects
-  this.metricList = new Array();  // Array of Metric objects
-  this.nestedArraysOfData = new Array();  // n-dimensional Array of Arrays of Arrays
+  this.metricList = [];  // Array of Metric objects
+  this.nestedArraysOfData = [];  // n-dimensional Array of Arrays of Arrays
 
   // Private Properties
   var self = this;
@@ -129,21 +132,25 @@ function DataVortex(axisList) {
   // this.nestedArraysOfData[9][22] = value;
   // -------------------------------------------------------------------
   this.setValueAt = function (value, listOfArrayOffsets) {
-    if (listOfArrayOffsets == null || listOfArrayOffsets.length == 0) {
+    if (listOfArrayOffsets === null || listOfArrayOffsets.length === 0) {
       self.nestedArraysOfData = value;
       return;
     }
-    if (self.nestedArraysOfData == null) self.nestedArraysOfData = new Array();
+    if (self.nestedArraysOfData === undefined) {
+      self.nestedArraysOfData = [];
+    }
     var currentArray = self.nestedArraysOfData;
     var numOffsets = listOfArrayOffsets.length;
-    for (var i = 0; i < (numOffsets - 1); i++) {
+    for (var i = 0; i < (numOffsets - 1); i += 1) {
       var currentOffset = listOfArrayOffsets[i];
-      if (currentArray[currentOffset] == null) currentArray[currentOffset] = new Array();
+      if (currentArray[currentOffset] === undefined) {
+        currentArray[currentOffset] = [];
+      }
       currentArray = currentArray[currentOffset];
     }
     var lastOffset = listOfArrayOffsets[(listOfArrayOffsets.length - 1)];
     currentArray[lastOffset] = value;
-  }
+  };
   
   // -------------------------------------------------------------------
   // DataVortex.getValueAt()
@@ -155,19 +162,22 @@ function DataVortex(axisList) {
   // this.nestedArraysOfData[9][22] = value;
   // -------------------------------------------------------------------
   this.getValueAt = function (listOfArrayOffsets) {
-    if ((listOfArrayOffsets == null) || (listOfArrayOffsets.length == 0) || (listOfArrayOffsets.length != this.axisList.length)) {
+    var i = 0;
+    if ((listOfArrayOffsets === null) || (listOfArrayOffsets.length === 0) || (listOfArrayOffsets.length !== this.axisList.length)) {
       return null;
     }
-    for (var i = 0; i < this.axisList.length; i++) {
-      if (listOfArrayOffsets[i] == null) return null; // C'est ici qu'il faudrait retourner le total plutôt que null
+    for (i = 0; i < this.axisList.length; i += 1) {
+      if (listOfArrayOffsets[i] === null) {
+        return null; // This is where we should return the total instead of null
+      }
     }
     var cellValue = null;
     var currentObject = self.nestedArraysOfData;
-    for (var i = 0; i < self.axisList.length; i++) {
+    for (i = 0; i < self.axisList.length; i += 1) {
       if (currentObject[listOfArrayOffsets[i]]) {
         currentObject = currentObject[listOfArrayOffsets[i]];
       } else {
-        currentObject=0;
+        currentObject = 0;
         break;
       }
     }
@@ -175,13 +185,13 @@ function DataVortex(axisList) {
     return cellValue;
   };
 
-  this.getlistOfArrayOffsets = function(bucketList) {
-    var listOfArrayOffsets = new Array();
-    for (var i = 0; i < self.axisList.length; i++) {
+  this.getlistOfArrayOffsets = function (bucketList) {
+    var listOfArrayOffsets = [];
+    for (var i = 0; i < self.axisList.length; i += 1) {
       var axisInQuestion = self.axisList[i];
       var indexAlongThisAxis = 0;
-      for (var j = 0; j < bucketList.length; j++) {
-        if (axisInQuestion == bucketList[j].axis) {
+      for (var j = 0; j < bucketList.length; j += 1) {
+        if (axisInQuestion === bucketList[j].axis) {
           indexAlongThisAxis = bucketList[j].axisIndex;
           break;
         }
@@ -189,7 +199,7 @@ function DataVortex(axisList) {
       listOfArrayOffsets[i] = indexAlongThisAxis;
     }
     return listOfArrayOffsets;
-  }
+  };
 
   // -------------------------------------------------------------------
   // DataVortex.setValue()
