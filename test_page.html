@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" >
+
+<!-- ===============================================================
+     test_page.html
+     
+     A page that uses JavaScript and CSS to create a  pivot-table
+     presentation of literacy statistics. 
+     
+     Written in 2004 by 
+       Brian Douglas Skinner <brian.skinner@gumption.org>
+  
+     Copyright rights relinquished under the Creative Commons  
+     Public Domain Dedication:
+       http://creativecommons.org/licenses/publicdomain/
+     =========================================================== -->
+
+  <head>
+    <title>Pivot Table Test Page</title>
+    <script type="text/javascript" src="data_vortex.js"></script>
+    <script type="text/javascript" src="test_page.js"></script>
+    <script type="text/javascript" src="pivot_table.js"></script>
+    <script type="text/javascript" src="literacy_data.js"></script>
+    <script type="text/javascript" src="fake_population_data.js"></script>
+    <script type="text/javascript" src="gastax_data.js"></script>
+    <link rel="stylesheet" type="text/css" href="pivot_table.css" />
+  </head>
+
+  <body>
+    <noscript><p>Sorry, the browser you're using doesn't support JavaScript. The buttons on this page won't work.</p></noscript>
+
+    <div><h1>Pivot Table Test Page</h1></div>
+
+    <div id="mainArea">
+      <div id="tableOne">
+      </div>
+      <div id="tableTwo">
+      </div>
+      <div id="tableThree">
+      </div>
+      <div id="tableFour">
+      </div>
+    </div>
+    
+    <div>
+      <hr/>
+      <h3>To Do List</h3>
+      <ol>
+        <li><a>put some thought into types of data values -- units, time, bucket-values vs. number-values vs. string-values</a></li>
+        <li>offer <a>bar graph</a> when there are zero levels of columns, and the data values are numbers</li>
+        <li>offer <a>bar graph</a> when there's only one level of columns, and that column's buckets create a partition</li>
+        <li><a>have cell background colors act as a kind of bar graph for values from 0% ot 100%</a></li>
+        <li><a>have sets of axes and buckets that are independent from the data vortex</a></li>
+        <li><a>create the notion of "categories" of buckets -- e.g. the "Canada" bucket is in the "Developed Nation" category</a></li>
+        <li><a>add controls to turn on/off "total" rows/columns and "detail" rows/columns</a></li>
+        <li><a>add controls to load pivot table data source</a></li>
+        <li><a>animate bar graph using time as a z-axis</a></li>
+        <li><a>make pivot controls work in the case where you pick "none"</a></li>
+        <li>figure out how to write data back to the server -- maybe <a>WebDAV via JavaScript</a></li>
+      </ol>
+    </div>
+    
+    <div><textarea readonly id="debugOutput" rows="30" cols="80" wrap="virtual"></textarea></div>
+
+   <div style="display: none">
+   <form name="experiment">
+     <table class="pivotTable">
+       <tbody>
+         <tr><th rowspan="2" colspan="2"></th>
+           <th>
+             <select name="columnMajor" size="1">
+               <option selected value="Gender">Gender</option>
+               <option value="Year">Year</option>
+               <option value="Country">Country</option>
+               <option value="R/U">R/U</option>
+             </select>
+           </th>
+           <th colspan="3">Male</th><th colspan="3">Female</th>
+         </tr>
+         <tr>
+           <th>
+             <select name="columnMinor" size="1">
+               <option value="Gender">Gender</option>
+               <option selected value="Year">Year</option>
+               <option value="Country">Country</option>
+               <option value="R/U">R/U</option>
+             </select>
+           </th>
+         <th>2000</th><th>2001</th><th>2002</th><th>2000</th><th>2001</th><th>2002</th></tr>
+         <tr>
+           <th>
+             <select name="rowMajor">
+               <option value="Gender">Gender</option>
+               <option value="Year">Year</option>
+               <option selected value="Country">Country</option>
+               <option value="R/U">R/U</option>
+             </select>
+           </th>
+           <th>
+             <select name="rowMinor">
+               <option value="Gender">Gender</option>
+               <option value="Year">Year</option>
+               <option value="Country">Country</option>
+               <option selected value="R/U">R/U</option>
+             </select>
+           </th>
+           <th colspan="7"></th>
+         </tr>
+         <tr><th rowspan="2">India</th><th>Rural</th><th></th><td>12.5</td><td>14.3</td><td>16.5</td><td>12.2</td><td>13.9</td><td>15.8</td></tr>
+         <tr><th>Urban</td><th></th><td>6.5</td><td>7.3</td><td>8.5</td><td>6.2</td><td>7.9</td><td>7.8</td></tr>
+         <tr><th rowspan="2">China</th><th>Rural</th><th></th><td>12.5</td><td>14.3</td><td>16.5</td><td>12.2</td><td>13.9</td><td>15.8</td></tr>
+         <tr><th>Urban</th><th></th><td>6.5</td><td>7.3</td><td>8.5</td><td>6.2</td><td>7.9</td><td>7.8</td></tr>
+       </tbody>
+     </table>
+   </form>  
+    </div>
+
+  </body>
+</html>
