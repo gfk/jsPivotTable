@@ -88,18 +88,18 @@ PivotTable.prototype.display = function () {
   var dimensionOfPivotTable = this.dataVortex.axisList.length;
   
   // add HTML to start table
-  arrayOfStrings.push("<h2>" + this.dataVortex.metricList[0].name + "</h2>");
+  //arrayOfStrings.push("<h2>" + this.dataVortex.metricList[0].name + "</h2>");
   arrayOfStrings.push("<table class=\"pivotTable\">");
   arrayOfStrings.push("<tbody>");
   
   // Start the top row of column headers
-  arrayOfStrings.push("<tr>");                                
+  arrayOfStrings.push("<tr>");
   
   // Create the special upper-left cell
   var rowspanValue = Math.max(this.columnAxes.length, 1);
   var colspanValue = Math.max(this.rowAxes.length, 1);
-  arrayOfStrings.push("<th rowspan=\"" + rowspanValue + "\" colspan=\"" + colspanValue + "\">"); 
-  arrayOfStrings.push("<input type=\"button\" class=\"layoutButton\" id=\"" + this.layoutButtonId + "\" name=\"layout\" value=\"Change Layout\"></input>");
+  arrayOfStrings.push("<th rowspan=\"" + rowspanValue + "\" colspan=\"" + colspanValue + "\">");
+  arrayOfStrings.push("<input type=\"button\" class=\"layoutButton\" id=\"" + this.layoutButtonId + "\" name=\"layout\" value=\"Paramètres\"></input>");
   arrayOfStrings.push("</th>");
 
   // Create all the column headers
@@ -301,20 +301,20 @@ PivotTable.prototype.getFormatedCellValue = function (cellValue) {
   var returnValue = cellValue;
   switch (this.dataVortex.metricList[0].datatype) {
     case (Datatype.MONEY):
-        var number = cellValue;
-        var negative = (number < 0);
-	number = Math.abs(number);
-	number = parseInt((number + .005) * 100); // parseInt((number + .005) * 100);
-	number = number / 100;
-	returnValue = new String(number);
-	if (returnValue.indexOf(".") < 0) { 
-          returnValue += ".00"; 
-        }
-	if (returnValue.indexOf(".") == (returnValue.length - 2)) { 
-          returnValue += "0"; 
-        }
-        if (negative) returnValue = "(" + returnValue + ")";
-        returnValue = "$" + returnValue;
+      var number = cellValue;
+      var negative = (number < 0);
+      number = Math.abs(number);
+      number = parseInt((number + .005) * 100); // parseInt((number + .005) * 100);
+      number = number / 100;
+      returnValue = new String(number);
+      if (returnValue.indexOf(".") < 0) { 
+        returnValue += ".00"; 
+      }
+      if (returnValue.indexOf(".") == (returnValue.length - 2)) { 
+        returnValue += "0"; 
+      }
+      if (negative) returnValue = "(" + returnValue + ")";
+      returnValue = "$" + returnValue;
       break;
     default:
       returnValue = cellValue;
