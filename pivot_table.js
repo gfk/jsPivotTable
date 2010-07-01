@@ -120,20 +120,20 @@ PivotTable.prepareTableObject = (function () {
         if (inTableObject[i].cellData !== undefined) { // Base case
           var empty = true;
           if (is_array(inTableObject[i].cellData[0])) {
+            // Multi-level cellData, we need to merge this and calculate totals
             var baseArray = [], total = [];
             for (var l = 0, o = inTableObject[i].cellData.length; l < o; l += 1) {
+              // Calculate row totals
               for (var p = 0, q = inTableObject[i].cellData[l].length; p < q; p += 1) {
-                // Calculate row totals
                 total[p]  = total[p] || 0;
                 total[p] += inTableObject[i].cellData[l][p];
               }
               baseArray = baseArray.concat(inTableObject[i].cellData[l]);
             }
-            inTableObject[i].meta       = inTableObject[i].meta || {};
-            inTableObject[i].meta.total = total;
-            inTableObject[i].cellData   = baseArray;
+            inTableObject[i].cellData = baseArray.concat(total);
           }
           for (var j = 0, n = inTableObject[i].cellData.length; j < n; j += 1) {
+            // Calculate col totals
             meta.total[j] = meta.total[j] || 0;
             if (inTableObject[i].cellData[j] !== 0) {
               meta.total[j] += inTableObject[i].cellData[j];
@@ -151,7 +151,7 @@ PivotTable.prepareTableObject = (function () {
             delete inTableObject[i];
           } else {
             for (var k = 0, m = inTableObject[i].meta.total.length; k < m; k += 1) {
-               // Calculate col totals
+              // Calculate col totals
               meta.total[k]  = meta.total[k] || 0;
               meta.total[k] += inTableObject[i].meta.total[k];
             }
@@ -175,7 +175,8 @@ PivotTable.makeHTML = (function () {
           toBeHTML += "<th colspan=\"" + (colspanValue) + "\">Total " + inTableObject[i]['name'] + "</th><td>" + inTableObject[i]['value'].join("</td><td>") + "</td></tr>\n<tr>";
         } else if (inTableObject[i].cellData !== undefined) {
           // Data
-          toBeHTML += "<th>" + inTableObject.meta.axisName + ':' + i + "</th><td>" + inTableObject[i].cellData.join("</td><td>") + "</td></tr>\n<tr>";
+          toBeHTML += "<th>" + inTableObject.meta.axisName + ':' + i + "</th><td>" + inTableObject[i].cellData.join("</td><td>") + "</td>";
+          toBeHTML += "</tr>\n<tr>";
         } else {
           // Headers
           toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
@@ -225,36 +226,55 @@ PivotTable.makeHTML = (function () {
   };
 }());
 
-
 // -------------------------------------------------------------------
 // PivotTable.generateTableObject()
 //   public method
 // -------------------------------------------------------------------
 PivotTable.prototype.generateTableObject = function () {
-  var tableDiv = document.getElementById(this.divId);
+  var copyColumnAxes = function (ca) {
+    var colAxes = [];
+    for (var i = 0, l = ca.length; i < l; i += 1) {
+      var colAxis        = {};
+      colAxis.name       = ca[i].name;
+      colAxis.bucketList = [];
+      for (var j = 0, k = ca[i].bucketList.length; j < k; j += 1) {
+        var bl  = {};
+        bl.name = ca[i].bucketList[j].name;
+        colAxis.bucketList.push(bl);
+      }
+      colAxes.push(colAxis);
+    }
+    return colAxes;
+  };
+  
   var i = 0,
       l = 0;
 
   // Create all the column headers
+  var colAxes = copyColumnAxes(this.columnAxes);
+  if (colAxes.length > 1) {
+    // Add a "Total" header if we have more than one column.
+    colAxes[0].bucketList.push({ "name": "Total" });
+  }
   var colHeaders = [];
-  for (var column = 0, len = this.columnAxes.length; column < len; column += 1) {
+  for (var column = 0, len = colAxes.length; column < len; column += 1) {
     var axisHeader = {};
-    axisHeader.axisName = this.columnAxes[column].name;
+    axisHeader.axisName = colAxes[column].name;
     axisHeader.cols     = [];
     
     // create header cells for this row of column headers
     var numRepeats = 1;
     for (i = 0; i < column; i += 1) {
-      numRepeats *= this.columnAxes[i].bucketList.length; 
+      numRepeats *= colAxes[i].bucketList.length; 
     }
     for (var repeat = 0; repeat < numRepeats; repeat += 1) {
-      for (var x = 0, m = this.columnAxes[column].bucketList.length; x < m; x += 1) { 
+      for (var x = 0, m = colAxes[column].bucketList.length; x < m; x += 1) { 
         var numberOfSpannedColumnsForEachHeaderColumn = 1;
-        for (i = (column + 1), l = this.columnAxes.length; i < l; i += 1) {
-          numberOfSpannedColumnsForEachHeaderColumn *= this.columnAxes[i].bucketList.length;
+        for (i = (column + 1), l = colAxes.length; i < l; i += 1) {
+          numberOfSpannedColumnsForEachHeaderColumn *= colAxes[i].bucketList.length;
         }
         var colHeader = {};
-        colHeader.bucketName = this.columnAxes[column].bucketList[x].name;
+        colHeader.bucketName = colAxes[column].bucketList[x].name;
         colHeader.nbElements = numberOfSpannedColumnsForEachHeaderColumn;
         axisHeader.cols.push(colHeader);
       }
