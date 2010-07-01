@@ -165,6 +165,7 @@ PivotTable.prepareTableObject = (function () {
 }());
 
 PivotTable.makeHTML = (function () {
+  var htmlHeaders  = "";
   var makeHTMLData = function (inTableObject, colspanValue) {
     var toBeHTML   = "",
         classe     = "",
@@ -178,16 +179,17 @@ PivotTable.makeHTML = (function () {
           toBeHTML += "<th " + classe + " colspan=\"" + (colspanValue) + "\">Total " + inTableObject[i]['name'] + "</th><td " + classe + ">" + inTableObject[i]['value'].join("</td><td " + classe + ">") + "</td></tr>\n<tr>";
         } else if (inTableObject[i].cellData !== undefined) {
           // Data
-          classe = (evenNotOdd?' class="even"':' class="odd"');
+          classe = (evenNotOdd ? ' class="even"' : ' class="odd"');
           toBeHTML += "<th " + classe + ">" + inTableObject.meta.axisName + ':' + i + "</th><td " + classe + ">" + inTableObject[i].cellData.join("</td><td " + classe + ">") + "</td>";
           toBeHTML += "</tr>\n<tr>";
         } else {
           // Headers
+          toBeHTML += htmlHeaders;
           toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
           toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
         }
+        evenNotOdd = !evenNotOdd;
       }
-      evenNotOdd = !evenNotOdd;
     }
     return toBeHTML.substring(0, toBeHTML.length - 4);
   };
@@ -196,33 +198,33 @@ PivotTable.makeHTML = (function () {
     var toBeHTML = "";
     
     // Open table
-    toBeHTML += "<table class=\"pivotTable\">\n<tbody><tr>";
-    
-    // Create the special upper-left cell
-    toBeHTML += "<th rowspan=\"" + inTableObject.meta.rowspanValue + "\" colspan=\"" + inTableObject.meta.colspanValue + "\">";
-    toBeHTML += "<input type=\"button\" class=\"layoutButton\" id=\"paramBtn\" name=\"layout\" value=\"Param\"></input>";
-    toBeHTML += "</th>";
+    toBeHTML += "<table class=\"pivotTable\">\n<tbody>";
     
     // Table headers
+    htmlHeaders = "<tr>";
+    var rowHeaders = inTableObject.meta.rowHeaders;
     var colHeaders = inTableObject.meta.colHeaders;
+    for (var row = 0, leng = rowHeaders.length; row < leng; row += 1) {
+      htmlHeaders += "<th rowspan=\"" + colHeaders.length + "\">" + rowHeaders[row].axisName + "</th>\n";
+    }
     for (var column = 0, len = colHeaders.length; column < len; column += 1) {
       if (column > 0) {
-        toBeHTML += "<tr>\n";
+        htmlHeaders += "<tr>\n";
       }
       for (var x = 0, m = colHeaders[column].cols.length; x < m; x += 1) { 
         var col = colHeaders[column].cols[x];
         if (col.nbElements > 1) {
-          toBeHTML += "<th colspan=\"" + col.nbElements + "\">";
+          htmlHeaders += "<th colspan=\"" + col.nbElements + "\">";
         } else {
-          toBeHTML += "<th>";
+          htmlHeaders += "<th>";
         }
-        toBeHTML += colHeaders[column].axisName + ':' + col.bucketName + "</th>\n";
+        htmlHeaders += colHeaders[column].axisName + ':' + col.bucketName + "</th>\n";
       }
-      toBeHTML += "</tr>\n";
+      htmlHeaders += "</tr>\n";
     }
     
     // Table data
-    toBeHTML += makeHTMLData(inTableObject, inTableObject.meta.colspanValue + 1);
+    toBeHTML += makeHTMLData(inTableObject, rowHeaders.length + 1);
     
     // Close the table
     toBeHTML += "</tbody>\n</table>\n";
@@ -255,6 +257,15 @@ PivotTable.prototype.generateTableObject = function () {
   var i = 0,
       l = 0;
 
+  // Create all the row headers
+  var axisHeader = {};
+  var rowHeaders = [];
+  for (var row = 0, leng = this.rowAxes.length; row < leng; row += 1) {
+    axisHeader          = {};
+    axisHeader.axisName = this.rowAxes[row].name;
+    rowHeaders.push(axisHeader);
+  }
+
   // Create all the column headers
   var colAxes = copyColumnAxes(this.columnAxes);
   if (colAxes.length > 1) {
@@ -263,7 +274,7 @@ PivotTable.prototype.generateTableObject = function () {
   }
   var colHeaders = [];
   for (var column = 0, len = colAxes.length; column < len; column += 1) {
-    var axisHeader = {};
+    axisHeader = {};
     axisHeader.axisName = colAxes[column].name;
     axisHeader.cols     = [];
     
@@ -302,9 +313,8 @@ PivotTable.prototype.generateTableObject = function () {
   }
   var tableObject = this.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, 0, false);
   
-  tableObject.meta.colHeaders   = colHeaders;
-  tableObject.meta.rowspanValue = Math.max(this.columnAxes.length, 1);
-  tableObject.meta.colspanValue = Math.max(this.rowAxes.length, 1);
+  tableObject.meta.colHeaders = colHeaders;
+  tableObject.meta.rowHeaders = rowHeaders;
   PivotTable.prepareTableObject(tableObject);
 
   return tableObject;
