@@ -162,8 +162,47 @@ PivotTable.prepareTableObject = (function () {
   };
 }());
 
-PivotTable.makeHTML = function (inTableObject, colspanValue) {
+PivotTable.makeHTML = function (inTableObject, tableDiv) {
   var toBeHTML = "";
+  
+  // Open table
+  toBeHTML += "<table class=\"pivotTable\">\n<tbody>";
+  
+  // Create the special upper-left cell
+  toBeHTML += "<th rowspan=\"" + inTableObject.meta.rowspanValue + "\" colspan=\"" + inTableObject.meta.colspanValue + "\">";
+  toBeHTML += "<input type=\"button\" class=\"layoutButton\" id=\"paramBtn\" name=\"layout\" value=\"Param\"></input>";
+  toBeHTML += "</th>";
+  
+  // Table headers
+  var colHeaders = inTableObject.meta.colHeaders;
+  for (var column = 0, len = colHeaders.length; column < len; column += 1) {
+    if (column > 0) {
+      toBeHTML += "<tr>\n";
+    }
+    for (var x = 0, m = colHeaders[column].cols.length; x < m; x += 1) { 
+      var col = colHeaders[column].cols[x];
+      if (col.nbElements > 1) {
+        toBeHTML += "<th colspan=\"" + col.nbElements + "\">";
+      } else {
+        toBeHTML += "<th>";
+      }
+      toBeHTML += colHeaders[column].axisName + ':' + col.bucketName + "</th>\n";
+    }
+    toBeHTML += "</tr>\n";
+  }
+  
+  // Table data
+  toBeHTML += PivotTable.makeHTMLData(inTableObject, inTableObject.meta.colspanValue + 1);
+  
+  // Close the table
+  toBeHTML += "</tbody>\n</table>\n";
+  
+  tableDiv.innerHTML = toBeHTML;
+};
+
+PivotTable.makeHTMLData = function (inTableObject, colspanValue) {
+  var toBeHTML = "";
+  
   for (var i in inTableObject) {
     if (inTableObject.hasOwnProperty(i) && i !== 'meta') {
       if (i === 'total') {
@@ -174,8 +213,8 @@ PivotTable.makeHTML = function (inTableObject, colspanValue) {
         toBeHTML += "<th>" + inTableObject.meta.axisName + ':' + i + "</th><td>" + inTableObject[i].cellData.join("</td><td>") + "</td></tr>\n<tr>";
       } else {
         // Headers
-        toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + PivotTable.makeHTML(inTableObject[i], colspanValue - 1) + "</tr>\n";
-        toBeHTML += "<tr>" + PivotTable.makeHTML({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
+        toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + PivotTable.makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
+        toBeHTML += "<tr>" + PivotTable.makeHTMLData({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
       }
     }
   }
@@ -186,93 +225,36 @@ PivotTable.makeHTML = function (inTableObject, colspanValue) {
 // PivotTable.display()
 //   public method
 // -------------------------------------------------------------------
-PivotTable.prototype.display = function () {
+PivotTable.prototype.generateTableObject = function () {
   var tableDiv = document.getElementById(this.divId);
-  var arrayOfStrings = [];
-  var tableObject    = {};
   var i = 0,
       l = 0;
-  
-  // add HTML to start table
-  //arrayOfStrings.push("<h2>" + this.dataVortex.metricList[0].name + "</h2>");
-  arrayOfStrings.push("<table class=\"pivotTable\">");
-  arrayOfStrings.push("<tbody>");
-  
-  // Start the top row of column headers
-  arrayOfStrings.push("<tr>");
-  
-  // Create the special upper-left cell
-  var rowspanValue = Math.max(this.columnAxes.length, 1);
-  var colspanValue = Math.max(this.rowAxes.length, 1);
-  arrayOfStrings.push("<th rowspan=\"" + rowspanValue + "\" colspan=\"" + colspanValue + "\">");
-  arrayOfStrings.push("<input type=\"button\" class=\"layoutButton\" id=\"" + this.layoutButtonId + "\" name=\"layout\" value=\"Paramètres\"></input>");
-  arrayOfStrings.push("</th>");
 
   // Create all the column headers
-  if (this.columnAxes.length === 0) {
-    if (this.showLayoutControls) {
-      arrayOfStrings.push("<th>");
-      // arrayOfStrings.push(this.getAxisSelectionMenuHTML(null, null));
-      // arrayOfStrings.push("<br/>" + this.getMoveAxisButtonHTML(null, null));
-      arrayOfStrings.push("</th>");
+  var colHeaders = [];
+  for (var column = 0, len = this.columnAxes.length; column < len; column += 1) {
+    var axisHeader = {};
+    axisHeader.axisName = this.columnAxes[column].name;
+    axisHeader.cols     = [];
+    
+    // create header cells for this row of column headers
+    var numRepeats = 1;
+    for (i = 0; i < column; i += 1) {
+      numRepeats *= this.columnAxes[i].bucketList.length; 
     }
-    arrayOfStrings.push("<th>" + "value" + "</th>");  
-  } else {
-    for (var column = 0, len = this.columnAxes.length; column < len; column += 1) {
-      if (column > 0) {
-        arrayOfStrings.push("<tr>");
-      }
-      
-      // if we're in layout mode, then create layout controls for this column axis
-      if (this.showLayoutControls) {
-        arrayOfStrings.push("<th>");
-        arrayOfStrings.push(this.getAxisSelectionMenuHTML(null, column));
-        arrayOfStrings.push("<br/>" + this.getMoveAxisButtonHTML(null, column));
-        arrayOfStrings.push("</th>");
-      }
-      
-      // create header cells for this row of column headers
-      var numRepeats = 1;
-      for (i = 0; i < column; i += 1) {
-        numRepeats = this.columnAxes[i].bucketList.length * numRepeats; 
-      }
-      for (var repeat = 0; repeat < numRepeats; repeat += 1) {
-        for (var x = 0, m = this.columnAxes[column].bucketList.length; x < m; x += 1) { 
-          var numberOfSpannedColumnsForEachHeaderColumn = 1;
-          for (i = (column + 1), l = this.columnAxes.length; i < l; i += 1) {
-            numberOfSpannedColumnsForEachHeaderColumn = this.columnAxes[i].bucketList.length * numberOfSpannedColumnsForEachHeaderColumn;
-          }
-          arrayOfStrings.push("<th colspan=\"" + numberOfSpannedColumnsForEachHeaderColumn + "\">" + this.columnAxes[column].bucketList[x].name + "</th>"); 
+    for (var repeat = 0; repeat < numRepeats; repeat += 1) {
+      for (var x = 0, m = this.columnAxes[column].bucketList.length; x < m; x += 1) { 
+        var numberOfSpannedColumnsForEachHeaderColumn = 1;
+        for (i = (column + 1), l = this.columnAxes.length; i < l; i += 1) {
+          numberOfSpannedColumnsForEachHeaderColumn *= this.columnAxes[i].bucketList.length;
         }
-      }
-      arrayOfStrings.push("</tr>");
-    }
-  }
-
-  // If we're in layout mode, then create a special row with layout controls 
-  // for all the row axes.
-  if (this.showLayoutControls) {
-    arrayOfStrings.push("<tr>");
-    if (this.rowAxes.length === 0) {
-      arrayOfStrings.push("<th>");
-      // arrayOfStrings.push(this.getAxisSelectionMenuHTML(null, null));
-      // arrayOfStrings.push("<br/>" + this.getMoveAxisButtonHTML(null, null));
-      arrayOfStrings.push("</th>");
-    } else {
-      for (var row = 0, n = this.rowAxes.length; row < n; row += 1) {
-        arrayOfStrings.push("<th>");
-        arrayOfStrings.push(this.getAxisSelectionMenuHTML(row, null));
-        arrayOfStrings.push("<br/>" + this.getMoveAxisButtonHTML(row, null));
-        arrayOfStrings.push("</th>");
+        var colHeader = {};
+        colHeader.bucketName = this.columnAxes[column].bucketList[x].name;
+        colHeader.nbElements = numberOfSpannedColumnsForEachHeaderColumn;
+        axisHeader.cols.push(colHeader);
       }
     }
-    arrayOfStrings.push("<th></th>");    
-    var numberOfColumnCellsSpanned = 1;
-    for (i = 0, l = this.columnAxes.length; i < l; i += 1) {
-      numberOfColumnCellsSpanned = this.columnAxes[i].bucketList.length * numberOfColumnCellsSpanned; 
-    }
-    arrayOfStrings.push("<th colspan=\"" + numberOfColumnCellsSpanned + "\"></th>");
-    arrayOfStrings.push("</tr>");                                  
+    colHeaders.push(axisHeader);
   }
   
   // Create all the data rows
@@ -288,25 +270,17 @@ PivotTable.prototype.display = function () {
   for (i = 0, l = this.columnAxes.length; i < l; i += 1) {
     offsetOfColumn[i] = PivotTable.getIndexOfElementInArray(this.columnAxes[i], this.dataVortex.axisList);
   }
-  tableObject = this.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, 0, false);
-
-  // Remove empty elements from tableObject
+  var tableObject = this.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, 0, false);
+  tableObject.meta.colHeaders   = colHeaders;
+  tableObject.meta.rowspanValue = Math.max(this.columnAxes.length, 1);
+  tableObject.meta.colspanValue = Math.max(this.rowAxes.length, 1);
   PivotTable.prepareTableObject(tableObject);
-  arrayOfStrings.push(PivotTable.makeHTML(tableObject, colspanValue + 1));
 
-  // add HTML to close table
-  arrayOfStrings.push("</tbody>");
-  arrayOfStrings.push("</table>");
-  
-  // take all the HTML and put it in the document
-  // elementMainArea.appendChild(outerDiv);
-  tableDiv.innerHTML = arrayOfStrings.join("");
-  //tableDiv.innerHTML = "<pre>" + JSON.stringify(tableObject) + "</pre>";
-  
-  // add event handlers for the newly created UI elements
-  //document.getElementById(this.layoutButtonId).onclick = PivotTable.clickOnLayoutButton;
-  
-  return;
+  return tableObject;
+};
+
+PivotTable.prototype.display = function () {
+  PivotTable.makeHTML(this.generateTableObject(), document.getElementById(this.divId));
 };
 
 // -------------------------------------------------------------------
