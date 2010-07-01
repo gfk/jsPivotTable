@@ -161,31 +161,31 @@ function DataVortex(axisList) {
   //   or 
   // this.nestedArraysOfData[9][22] = value;
   // -------------------------------------------------------------------
-  this.getValueAt = function (listOfArrayOffsets) {
-    var i = 0,
-        l = 0;
+  this.getValueAt = (function () {
+    var currentObject, l;
     
-    if ((listOfArrayOffsets === null) || (listOfArrayOffsets.length === 0) || (listOfArrayOffsets.length !== this.axisList.length)) {
-      return null;
-    }
-    for (i = 0, l = this.axisList.length; i < l; i += 1) {
-      if (listOfArrayOffsets[i] === null) {
-        return null; // This is where we should return the total instead of null
+    return function (listOfArrayOffsets) {
+      if (!currentObject) {
+        currentObject = self.nestedArraysOfData;
+        l = self.axisList.length;
       }
-    }
-    var cellValue = null;
-    var currentObject = self.nestedArraysOfData;
-    for (i = 0, l = self.axisList.length; i < l; i += 1) {
-      if (currentObject[listOfArrayOffsets[i]]) {
-        currentObject = currentObject[listOfArrayOffsets[i]];
-      } else {
-        currentObject = 0;
-        break;
+      var i = 0;
+      
+      if ((listOfArrayOffsets === null) || (listOfArrayOffsets.length === 0) || (listOfArrayOffsets.length !== this.axisList.length)) {
+        return null;
       }
-    }
-    cellValue = currentObject;
-    return cellValue;
-  };
+      
+      for (i = 0; i < l; i += 1) {
+        if (currentObject[listOfArrayOffsets[i]]) {
+          currentObject = currentObject[listOfArrayOffsets[i]];
+        } else {
+          currentObject = 0;
+          break;
+        }
+      }
+      return currentObject;
+    };
+  }());
 
   this.getlistOfArrayOffsets = function (bucketList) {
     var listOfArrayOffsets = [];
