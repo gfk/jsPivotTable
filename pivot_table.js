@@ -162,64 +162,67 @@ PivotTable.prepareTableObject = (function () {
   };
 }());
 
-PivotTable.makeHTML = function (inTableObject, tableDiv) {
-  var toBeHTML = "";
-  
-  // Open table
-  toBeHTML += "<table class=\"pivotTable\">\n<tbody>";
-  
-  // Create the special upper-left cell
-  toBeHTML += "<th rowspan=\"" + inTableObject.meta.rowspanValue + "\" colspan=\"" + inTableObject.meta.colspanValue + "\">";
-  toBeHTML += "<input type=\"button\" class=\"layoutButton\" id=\"paramBtn\" name=\"layout\" value=\"Param\"></input>";
-  toBeHTML += "</th>";
-  
-  // Table headers
-  var colHeaders = inTableObject.meta.colHeaders;
-  for (var column = 0, len = colHeaders.length; column < len; column += 1) {
-    if (column > 0) {
-      toBeHTML += "<tr>\n";
-    }
-    for (var x = 0, m = colHeaders[column].cols.length; x < m; x += 1) { 
-      var col = colHeaders[column].cols[x];
-      if (col.nbElements > 1) {
-        toBeHTML += "<th colspan=\"" + col.nbElements + "\">";
-      } else {
-        toBeHTML += "<th>";
+PivotTable.makeHTML = (function () {
+  var makeHTMLData = function (inTableObject, colspanValue) {
+    var toBeHTML = "";
+    
+    for (var i in inTableObject) {
+      if (inTableObject.hasOwnProperty(i) && i !== 'meta') {
+        if (i === 'total') {
+          // (Sub-)Total
+          toBeHTML += "<th colspan=\"" + (colspanValue) + "\">Total " + inTableObject[i]['name'] + "</th><td>" + inTableObject[i]['value'].join("</td><td>") + "</td></tr>\n<tr>";
+        } else if (inTableObject[i].cellData !== undefined) {
+          // Data
+          toBeHTML += "<th>" + inTableObject.meta.axisName + ':' + i + "</th><td>" + inTableObject[i].cellData.join("</td><td>") + "</td></tr>\n<tr>";
+        } else {
+          // Headers
+          toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
+          toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
+        }
       }
-      toBeHTML += colHeaders[column].axisName + ':' + col.bucketName + "</th>\n";
     }
-    toBeHTML += "</tr>\n";
-  }
+    return toBeHTML.substring(0, toBeHTML.length - 4);
+  };
   
-  // Table data
-  toBeHTML += PivotTable.makeHTMLData(inTableObject, inTableObject.meta.colspanValue + 1);
-  
-  // Close the table
-  toBeHTML += "</tbody>\n</table>\n";
-  
-  tableDiv.innerHTML = toBeHTML;
-};
+  return function (inTableObject, tableDiv) {
+    var toBeHTML = "";
+    
+    // Open table
+    toBeHTML += "<table class=\"pivotTable\">\n<tbody>";
+    
+    // Create the special upper-left cell
+    toBeHTML += "<th rowspan=\"" + inTableObject.meta.rowspanValue + "\" colspan=\"" + inTableObject.meta.colspanValue + "\">";
+    toBeHTML += "<input type=\"button\" class=\"layoutButton\" id=\"paramBtn\" name=\"layout\" value=\"Param\"></input>";
+    toBeHTML += "</th>";
+    
+    // Table headers
+    var colHeaders = inTableObject.meta.colHeaders;
+    for (var column = 0, len = colHeaders.length; column < len; column += 1) {
+      if (column > 0) {
+        toBeHTML += "<tr>\n";
+      }
+      for (var x = 0, m = colHeaders[column].cols.length; x < m; x += 1) { 
+        var col = colHeaders[column].cols[x];
+        if (col.nbElements > 1) {
+          toBeHTML += "<th colspan=\"" + col.nbElements + "\">";
+        } else {
+          toBeHTML += "<th>";
+        }
+        toBeHTML += colHeaders[column].axisName + ':' + col.bucketName + "</th>\n";
+      }
+      toBeHTML += "</tr>\n";
+    }
+    
+    // Table data
+    toBeHTML += makeHTMLData(inTableObject, inTableObject.meta.colspanValue + 1);
+    
+    // Close the table
+    toBeHTML += "</tbody>\n</table>\n";
+    
+    tableDiv.innerHTML = toBeHTML;
+  };
+}());
 
-PivotTable.makeHTMLData = function (inTableObject, colspanValue) {
-  var toBeHTML = "";
-  
-  for (var i in inTableObject) {
-    if (inTableObject.hasOwnProperty(i) && i !== 'meta') {
-      if (i === 'total') {
-        // (Sub-)Total
-        toBeHTML += "<th colspan=\"" + (colspanValue) + "\">Total " + inTableObject[i]['name'] + "</th><td>" + inTableObject[i]['value'].join("</td><td>") + "</td></tr>\n<tr>";
-      } else if (inTableObject[i].cellData !== undefined) {
-        // Data
-        toBeHTML += "<th>" + inTableObject.meta.axisName + ':' + i + "</th><td>" + inTableObject[i].cellData.join("</td><td>") + "</td></tr>\n<tr>";
-      } else {
-        // Headers
-        toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + PivotTable.makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
-        toBeHTML += "<tr>" + PivotTable.makeHTMLData({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
-      }
-    }
-  }
-  return toBeHTML.substring(0, toBeHTML.length - 4);
-};
 
 // -------------------------------------------------------------------
 // PivotTable.display()
