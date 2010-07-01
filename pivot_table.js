@@ -1,5 +1,5 @@
 /*global PivotTable Datatype window */
-/*jslint white: true, browser: true, devel: true, onevar: false, undef: true, nomen: true, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, newcap: true, immed: true, indent: 2 */
+/*jslint white: true, browser: true, devel: true, onevar: false, sub: true, undef: true, nomen: true, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, newcap: true, immed: true, indent: 2 */
 
 /*****************************************************************************
  pivot_table.js
@@ -105,6 +105,83 @@ PivotTable.getIndexOfElementInArray = function (element, array, addIfAbsent) {
   return null;
 };
 
+PivotTable.prepareTableObject = (function () {
+  var is_array = function (value) {
+    return ((typeof value === 'object') && (value) && (value instanceof Array));
+  };
+  
+  return function (inTableObject) {
+    var meta = inTableObject.meta || {};
+    meta.nbElements = 0;
+    meta.total      = [];
+    for (var i in inTableObject) {
+      if (inTableObject.hasOwnProperty(i) && i !== 'meta') {
+        meta.nbElements += 1;
+        if (inTableObject[i].cellData !== undefined) { // Base case
+          var empty = true;
+          if (is_array(inTableObject[i].cellData[0])) {
+            var baseArray = [], total = [];
+            for (var l = 0, o = inTableObject[i].cellData.length; l < o; l += 1) {
+              for (var p = 0, q = inTableObject[i].cellData[l].length; p < q; p += 1) {
+                total[p]  = total[p] || 0;
+                total[p] += inTableObject[i].cellData[l][p];
+              }
+              baseArray = baseArray.concat(inTableObject[i].cellData[l]);
+            }
+            inTableObject[i].meta       = inTableObject[i].meta || {};
+            inTableObject[i].meta.total = total;
+            inTableObject[i].cellData   = baseArray;
+          }
+          for (var j = 0, n = inTableObject[i].cellData.length; j < n; j += 1) {
+            meta.total[j] = meta.total[j] || 0;
+            if (inTableObject[i].cellData[j] !== 0) {
+              meta.total[j] += inTableObject[i].cellData[j];
+              empty = false;
+            }
+          }
+          if (empty) {
+            meta.nbElements -= 1;
+            delete inTableObject[i];
+          }
+        } else { // Recursion
+          meta.nbElements += PivotTable.prepareTableObject(inTableObject[i]).nbElements;
+          if (inTableObject[i].meta.nbElements === 0) {
+            meta.nbElements -= 1;
+            delete inTableObject[i];
+          } else {
+            for (var k = 0, m = inTableObject[i].meta.total.length; k < m; k += 1) {
+              meta.total[k]  = meta.total[k] || 0;
+              meta.total[k] += inTableObject[i].meta.total[k];
+            }
+          }
+        }
+      }
+    }
+    inTableObject.meta = meta;
+    return meta;
+  };
+}());
+
+PivotTable.makeHTML = function (inTableObject, colspanValue) {
+  var toBeHTML = "";
+  for (var i in inTableObject) {
+    if (inTableObject.hasOwnProperty(i) && i !== 'meta') {
+      if (i === 'total') {
+        // (Sub-)Total
+        toBeHTML += "<th colspan=\"" + (colspanValue) + "\">Total " + inTableObject[i]['name'] + "</th><td>" + inTableObject[i]['value'].join("</td><td>") + "</td></tr>\n<tr>";
+      } else if (inTableObject[i].cellData !== undefined) {
+        // Data
+        toBeHTML += "<th>" + inTableObject.meta.axisName + ':' + i + "</th><td>" + inTableObject[i].cellData.join("</td><td>") + "</td></tr>\n<tr>";
+      } else {
+        // Headers
+        toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + PivotTable.makeHTML(inTableObject[i], colspanValue - 1) + "</tr>\n";
+        toBeHTML += "<tr>" + PivotTable.makeHTML({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
+      }
+    }
+  }
+  return toBeHTML.substring(0, toBeHTML.length - 4);
+};
+
 // -------------------------------------------------------------------
 // PivotTable.display()
 //   public method
@@ -112,7 +189,7 @@ PivotTable.getIndexOfElementInArray = function (element, array, addIfAbsent) {
 PivotTable.prototype.display = function () {
   var tableDiv = document.getElementById(this.divId);
   var arrayOfStrings = [];
-  var dimensionOfPivotTable = this.dataVortex.axisList.length;
+  var tableObject    = {};
   var i = 0,
       l = 0;
   
@@ -163,12 +240,12 @@ PivotTable.prototype.display = function () {
         for (var x = 0, m = this.columnAxes[column].bucketList.length; x < m; x += 1) { 
           var numberOfSpannedColumnsForEachHeaderColumn = 1;
           for (i = (column + 1), l = this.columnAxes.length; i < l; i += 1) {
-            numberOfSpannedColumnsForEachHeaderColumn *= this.columnAxes[i].bucketList.length;
+            numberOfSpannedColumnsForEachHeaderColumn = this.columnAxes[i].bucketList.length * numberOfSpannedColumnsForEachHeaderColumn;
           }
           arrayOfStrings.push("<th colspan=\"" + numberOfSpannedColumnsForEachHeaderColumn + "\">" + this.columnAxes[column].bucketList[x].name + "</th>"); 
         }
       }
-      arrayOfStrings.push("</tr>\n");
+      arrayOfStrings.push("</tr>");
     }
   }
 
@@ -192,10 +269,10 @@ PivotTable.prototype.display = function () {
     arrayOfStrings.push("<th></th>");    
     var numberOfColumnCellsSpanned = 1;
     for (i = 0, l = this.columnAxes.length; i < l; i += 1) {
-      numberOfColumnCellsSpanned *= this.columnAxes[i].bucketList.length;
+      numberOfColumnCellsSpanned = this.columnAxes[i].bucketList.length * numberOfColumnCellsSpanned; 
     }
     arrayOfStrings.push("<th colspan=\"" + numberOfColumnCellsSpanned + "\"></th>");
-    arrayOfStrings.push("</tr>\n");                                  
+    arrayOfStrings.push("</tr>");                                  
   }
   
   // Create all the data rows
@@ -211,7 +288,11 @@ PivotTable.prototype.display = function () {
   for (i = 0, l = this.columnAxes.length; i < l; i += 1) {
     offsetOfColumn[i] = PivotTable.getIndexOfElementInArray(this.columnAxes[i], this.dataVortex.axisList);
   }
-  this.addRowsToArrayOfStrings(arrayOfStrings, offsetOfRow, offsetOfColumn, pti, 0, false, true);
+  tableObject = this.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, 0, false);
+
+  // Remove empty elements from tableObject
+  PivotTable.prepareTableObject(tableObject);
+  arrayOfStrings.push(PivotTable.makeHTML(tableObject, colspanValue + 1));
 
   // add HTML to close table
   arrayOfStrings.push("</tbody>");
@@ -219,133 +300,64 @@ PivotTable.prototype.display = function () {
   
   // take all the HTML and put it in the document
   // elementMainArea.appendChild(outerDiv);
-  var finalString = arrayOfStrings.join("");
-  tableDiv.innerHTML = finalString;
+  tableDiv.innerHTML = arrayOfStrings.join("");
+  //tableDiv.innerHTML = "<pre>" + JSON.stringify(tableObject) + "</pre>";
   
   // add event handlers for the newly created UI elements
-  document.getElementById(this.layoutButtonId).onclick = PivotTable.clickOnLayoutButton;
+  //document.getElementById(this.layoutButtonId).onclick = PivotTable.clickOnLayoutButton;
   
   return;
 };
 
-PivotTable.getRowsData = function (dataVortex, indice) {
-  //console.log("getRowsData(indice=" + indice + ")");
-  var findDefined = function (ary) {
-    var defined = [];
-    
-    for (var k = 0, l = ary.length; k < l; k += 1) {
-      if (ary[k] !== undefined) {
-        defined.push(k);
-      }
-    }
-    return defined;
-  };
-  
-  if (indice === null) {
-    indice = 0;
-  }
-  var foo = findDefined(dataVortex.nestedArraysOfData[0][indice]);
-  var bar = findDefined(dataVortex.nestedArraysOfData[1][indice]);
-  var baz = foo.concat(bar);
-  
-  var retour = {};
-  for (var i in baz) {
-    if (baz.hasOwnProperty(i)) {
-      retour[baz[i]] = true;
-    }
-  }
-  
-  var n = 0;
-  for (var j in retour) {
-    if (retour.hasOwnProperty(j)) {
-      n += 1;
-    }
-  }
-  retour.length = n;
-  return retour;
-};
-
 // -------------------------------------------------------------------
-// PivotTable.addRowsToArrayOfStrings()
+// PivotTable.addRowsToTableObject()
 // -------------------------------------------------------------------
-PivotTable.prototype.addRowsToArrayOfStrings = function (arrayOfStrings, offsetOfRow, offsetOfColumn, pti, rowAxisIndex, inside, evenNotOdd) {
+PivotTable.prototype.addRowsToTableObject = function (offsetOfRow, offsetOfColumn, pti, rowAxisIndex, inside) {
+  var tableObject = {};
+  tableObject.meta = {};
   if (!rowAxisIndex) {
     rowAxisIndex = 0;
   }
-  if (this.rowAxes.length === 0) {
-    arrayOfStrings.push("<tr>");
-    arrayOfStrings.push("<th>" + "value" + "</th>");
-    if (this.showLayoutControls) {
-      arrayOfStrings.push("<th></th>");
-    }
-    this.addCellsToArrayOfStrings(arrayOfStrings, offsetOfColumn, pti, 0, evenNotOdd);
-    arrayOfStrings.push("</tr>\n");  
-  } else {
-    var currentObject = PivotTable.getRowsData(this.dataVortex, pti[1]);
+  
+  tableObject.meta.axisName = this.rowAxes[rowAxisIndex].name;
+  
+  if (this.rowAxes.length !== 0) {
     for (var z = 0, l = this.rowAxes[rowAxisIndex].bucketList.length; z < l; z += 1) {
-      if (currentObject[z] === true) { // Only print line if at least one value is defined (avoid getting a line with zeros)
-        arrayOfStrings.push("<!-- pti=(" + pti.join(",") + ") rowAxisIndex=" + rowAxisIndex + " -->");
-        pti[offsetOfRow[rowAxisIndex]] = z; 
-        if (!inside || z > 0) {
-          arrayOfStrings.push("<tr>");
-        }
-        var numberOfRowsToSpan = (rowAxisIndex === 0 ? PivotTable.getRowsData(this.dataVortex, z).length : 1);
-        //if (rowAxisIndex === 0) { console.log("rowspan=" + numberOfRowsToSpan + " " + this.rowAxes[rowAxisIndex].bucketList[z].name); }
-        arrayOfStrings.push("<th rowspan=\"" + numberOfRowsToSpan + "\">" + this.rowAxes[rowAxisIndex].bucketList[z].name  + "</th>");
-        var nestedRowIndex = rowAxisIndex + 1;
-        if (nestedRowIndex < this.rowAxes.length) {
-          evenNotOdd = !evenNotOdd;
-          this.addRowsToArrayOfStrings(arrayOfStrings, offsetOfRow, offsetOfColumn, pti, nestedRowIndex, true, evenNotOdd);
-        } else {
-          if (this.showLayoutControls) {
-            arrayOfStrings.push("<th></th>");
-          }
-          this.addCellsToArrayOfStrings(arrayOfStrings, offsetOfColumn, pti, 0, evenNotOdd);
-          arrayOfStrings.push("</tr>\n");  
-        }
+      pti[offsetOfRow[rowAxisIndex]] = z; 
+      var nestedRowIndex = rowAxisIndex + 1;
+      var bucketName = this.rowAxes[rowAxisIndex].bucketList[z].name;
+      if (nestedRowIndex < this.rowAxes.length) {
+        tableObject[bucketName] = this.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, nestedRowIndex, true);
+      } else {
+        tableObject[bucketName] = {};
+        tableObject[bucketName].cellData = this.addCellsToTableObject(offsetOfColumn, pti, 0);  
       }
     }
   }
+  return tableObject;
 };
 
 
 // -------------------------------------------------------------------
-// PivotTable.addCellsToArrayOfStrings()
+// PivotTable.addCellsToTableObject()
 // -------------------------------------------------------------------
-PivotTable.prototype.addCellsToArrayOfStrings = function (arrayOfStrings, offsetOfColumn, pti, columnIndex, evenNotOdd) {
+PivotTable.prototype.addCellsToTableObject = function (offsetOfColumn, pti, columnIndex) {
+  var tabletable = [];
   if (!columnIndex) {
     columnIndex = 0;
   }
-  if (this.columnAxes.length === 0) {
-    if (this.dataVortex.metricList[0].datatype === Datatype.MONEY) {
-      // FIX-ME -- display this as a bar chart      
-      var cellValueFloat = this.dataVortex.getValueAt(pti);
-      var cellValueString = this.getFormatedCellValue(cellValueFloat);
-      var maxValue = 800.00; // FIX-ME!
-      var width = (cellValueFloat / maxValue) * 100; // 100 Percent
-      var evenOddColor = evenNotOdd ? "rgb(40%,60%,40%)" : "rgb(40%,40%,60%)";
-      arrayOfStrings.push("<td class=\"outerBar\"><input disabled type=\"text\" class=\"innerBar\" value=\"" + cellValueString + "\" size=\"1\" style=\"width: " + width + "%; background: " + evenOddColor + "\"></input></td>");
-    } else {
-      var cellValue = this.dataVortex.getValueAt(pti);
-      cellValue = this.getFormatedCellValue(cellValue);
-      var evenOddText = evenNotOdd ? "even" : "odd";
-      arrayOfStrings.push("<td class=\"" + evenOddText + "\">" + cellValue + "</td>");
-    }
-  } else {
+  if (this.columnAxes.length !== 0) {
     for (var x = 0, l = this.columnAxes[columnIndex].bucketList.length; x < l; x += 1) {
       pti[offsetOfColumn[columnIndex]] = x;
       var nestedColumnIndex = columnIndex + 1;
       if (nestedColumnIndex < this.columnAxes.length) {
-        evenNotOdd = !evenNotOdd;
-        this.addCellsToArrayOfStrings(arrayOfStrings, offsetOfColumn, pti, nestedColumnIndex, evenNotOdd);
+        tabletable[x] = this.addCellsToTableObject(offsetOfColumn, pti, nestedColumnIndex);
       } else {
-        var cellValueB = this.dataVortex.getValueAt(pti);
-        cellValueB = this.getFormatedCellValue(cellValueB);
-        var evenOddTextB = evenNotOdd ? "even" : "odd";
-        arrayOfStrings.push("<td class=\"" + evenOddTextB + "\">" + cellValueB + "</td>");
+        tabletable[x] = this.dataVortex.getValueAt(pti);
       }
     }
   }
+  return tabletable;
 };
 
 // -------------------------------------------------------------------
