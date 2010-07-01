@@ -41,7 +41,6 @@ html, body {
 
 .pivotTable {
   font-family: Arial, sans-serif;
-  font-size: x-small;
   background: silver;
 }
 
@@ -92,15 +91,6 @@ html, body {
   color: white;
 }
 
-#debugOutput {
-  font-family: Courier, monospace;
-  font-size: x-small;
-  border-style: inset;
-  text-align: left;
-  visibility: hidden;
-  display: none;
-}
-
 a, a:link, a:visited, a:active {
   font-weight: normal;
   text-decoration: none;
@@ -113,4 +103,10 @@ a:hover {
   border-bottom: 1px solid;
 }
 
-
+th.total, td.total {
+  background-color: #DDDDDD;
+  border-top: 2px solid navy;
+  font-style: italic;
+  font-weight: bold;
+  text-align: right;
+}

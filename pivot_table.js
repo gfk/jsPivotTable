@@ -166,16 +166,20 @@ PivotTable.prepareTableObject = (function () {
 
 PivotTable.makeHTML = (function () {
   var makeHTMLData = function (inTableObject, colspanValue) {
-    var toBeHTML = "";
+    var toBeHTML   = "",
+        classe     = "",
+        evenNotOdd = true;
     
     for (var i in inTableObject) {
       if (inTableObject.hasOwnProperty(i) && i !== 'meta') {
         if (i === 'total') {
           // (Sub-)Total
-          toBeHTML += "<th colspan=\"" + (colspanValue) + "\">Total " + inTableObject[i]['name'] + "</th><td>" + inTableObject[i]['value'].join("</td><td>") + "</td></tr>\n<tr>";
+          classe = 'class="total"';
+          toBeHTML += "<th " + classe + " colspan=\"" + (colspanValue) + "\">Total " + inTableObject[i]['name'] + "</th><td " + classe + ">" + inTableObject[i]['value'].join("</td><td " + classe + ">") + "</td></tr>\n<tr>";
         } else if (inTableObject[i].cellData !== undefined) {
           // Data
-          toBeHTML += "<th>" + inTableObject.meta.axisName + ':' + i + "</th><td>" + inTableObject[i].cellData.join("</td><td>") + "</td>";
+          classe = (evenNotOdd?' class="even"':' class="odd"');
+          toBeHTML += "<th " + classe + ">" + inTableObject.meta.axisName + ':' + i + "</th><td " + classe + ">" + inTableObject[i].cellData.join("</td><td " + classe + ">") + "</td>";
           toBeHTML += "</tr>\n<tr>";
         } else {
           // Headers
@@ -183,6 +187,7 @@ PivotTable.makeHTML = (function () {
           toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
         }
       }
+      evenNotOdd = !evenNotOdd;
     }
     return toBeHTML.substring(0, toBeHTML.length - 4);
   };
