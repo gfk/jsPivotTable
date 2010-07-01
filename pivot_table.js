@@ -123,6 +123,7 @@ PivotTable.prepareTableObject = (function () {
             var baseArray = [], total = [];
             for (var l = 0, o = inTableObject[i].cellData.length; l < o; l += 1) {
               for (var p = 0, q = inTableObject[i].cellData[l].length; p < q; p += 1) {
+                // Calculate row totals
                 total[p]  = total[p] || 0;
                 total[p] += inTableObject[i].cellData[l][p];
               }
@@ -150,6 +151,7 @@ PivotTable.prepareTableObject = (function () {
             delete inTableObject[i];
           } else {
             for (var k = 0, m = inTableObject[i].meta.total.length; k < m; k += 1) {
+               // Calculate col totals
               meta.total[k]  = meta.total[k] || 0;
               meta.total[k] += inTableObject[i].meta.total[k];
             }
@@ -188,7 +190,7 @@ PivotTable.makeHTML = (function () {
     var toBeHTML = "";
     
     // Open table
-    toBeHTML += "<table class=\"pivotTable\">\n<tbody>";
+    toBeHTML += "<table class=\"pivotTable\">\n<tbody><tr>";
     
     // Create the special upper-left cell
     toBeHTML += "<th rowspan=\"" + inTableObject.meta.rowspanValue + "\" colspan=\"" + inTableObject.meta.colspanValue + "\">";
@@ -225,7 +227,7 @@ PivotTable.makeHTML = (function () {
 
 
 // -------------------------------------------------------------------
-// PivotTable.display()
+// PivotTable.generateTableObject()
 //   public method
 // -------------------------------------------------------------------
 PivotTable.prototype.generateTableObject = function () {
@@ -274,6 +276,7 @@ PivotTable.prototype.generateTableObject = function () {
     offsetOfColumn[i] = PivotTable.getIndexOfElementInArray(this.columnAxes[i], this.dataVortex.axisList);
   }
   var tableObject = this.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, 0, false);
+  
   tableObject.meta.colHeaders   = colHeaders;
   tableObject.meta.rowspanValue = Math.max(this.columnAxes.length, 1);
   tableObject.meta.colspanValue = Math.max(this.rowAxes.length, 1);
@@ -282,6 +285,10 @@ PivotTable.prototype.generateTableObject = function () {
   return tableObject;
 };
 
+// -------------------------------------------------------------------
+// PivotTable.display()
+//   public method
+// -------------------------------------------------------------------
 PivotTable.prototype.display = function () {
   PivotTable.makeHTML(this.generateTableObject(), document.getElementById(this.divId));
 };
