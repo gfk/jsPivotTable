@@ -122,6 +122,31 @@ function DataVortex(axisList) {
   // Private Properties
   var self = this;
 
+  this.addValueAt = function (value, listOfArrayOffsets) {
+    if (listOfArrayOffsets === null || listOfArrayOffsets.length === 0) {
+      self.nestedArraysOfData = value;
+      return;
+    }
+    if (self.nestedArraysOfData === undefined) {
+      self.nestedArraysOfData = [];
+    }
+    var currentArray = self.nestedArraysOfData;
+    var numOffsets = listOfArrayOffsets.length;
+    for (var i = 0; i < (numOffsets - 1); i += 1) {
+      var currentOffset = listOfArrayOffsets[i];
+      if (currentArray[currentOffset] === undefined) {
+        currentArray[currentOffset] = [];
+      }
+      currentArray = currentArray[currentOffset];
+    }
+    var lastOffset = listOfArrayOffsets[(listOfArrayOffsets.length - 1)];
+    if (currentArray[lastOffset]) {
+      currentArray[lastOffset] += value;
+    } else {
+      currentArray[lastOffset] = value;
+    }
+  };
+
   // -------------------------------------------------------------------
   // DataVortex.setValueAt()
   //
