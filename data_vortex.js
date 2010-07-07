@@ -187,14 +187,15 @@ function DataVortex(axisList) {
   // this.nestedArraysOfData[9][22] = value;
   // -------------------------------------------------------------------
   this.getValueAt = (function () {
-    var currentObject, l;
+    var myNestedArraysOfData, l;
     
     return function (listOfArrayOffsets) {
-      if (!currentObject) {
-        currentObject = self.nestedArraysOfData;
+      if (myNestedArraysOfData === undefined) {
+        myNestedArraysOfData = self.nestedArraysOfData;
         l = self.axisList.length;
       }
-      var i = 0;
+      var i = 0,
+          currentObject = myNestedArraysOfData;
       
       if ((listOfArrayOffsets === null) || (listOfArrayOffsets.length === 0) || (listOfArrayOffsets.length !== this.axisList.length)) {
         return null;
