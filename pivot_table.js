@@ -164,12 +164,55 @@ PivotTable.prepareTableObject = (function () {
   };
 }());
 
+//This prototype is provided by the Mozilla foundation and
+//is distributed under the MIT license.
+//http://www.ibiblio.org/pub/Linux/LICENSES/mit.license
+if (!Array.prototype.map) {
+  Array.prototype.map = function (fun /*, thisp*/) {
+    var len = this.length;
+    if (typeof fun !== "function") {
+      throw new TypeError();
+    }
+
+    var res = new Array(len);
+    var thisp = arguments[1];
+    for (var i = 0; i < len; i += 1) {
+      if (i in this) {
+        res[i] = fun.call(thisp, this[i], i, this);
+      }
+    }
+
+    return res;
+  };
+}
+
 PivotTable.makeHTML = (function () {
+  var formatHeaderName = function (axis, name) {
+    if (axis === "TOUR") {
+      return "Tour " + name;
+    } else if (axis === "ANSES") {
+      return name;
+    } else if (axis === "COL") {
+      return name;
+    } else if (axis === "PROG") {
+      return name;
+    } else {
+      return axis + "::" + name;
+    }
+  };
+  
   var htmlHeaders  = "";
   var makeHTMLData = function (inTableObject, colspanValue) {
     var toBeHTML   = "",
         classe     = "",
-        evenNotOdd = true;
+        evenNotOdd = true,
+        notzero    = function (a) {
+          if (a !== 0) {
+            return a
+          } else {
+            return "";
+          }
+        };
     
     for (var i in inTableObject) {
       if (inTableObject.hasOwnProperty(i) && i !== 'meta') {
@@ -180,12 +223,12 @@ PivotTable.makeHTML = (function () {
         } else if (inTableObject[i].cellData !== undefined) {
           // Data
           classe = (evenNotOdd ? ' class="even"' : ' class="odd"');
-          toBeHTML += "<th " + classe + ">" + inTableObject.meta.axisName + ':' + i + "</th><td " + classe + ">" + inTableObject[i].cellData.join("</td><td " + classe + ">") + "</td>";
+          toBeHTML += "<th " + classe + ">" + formatHeaderName(inTableObject.meta.axisName, i) + "</th><td " + classe + ">" + inTableObject[i].cellData.map(notzero).join("</td><td " + classe + ">") + "</td>";
           toBeHTML += "</tr>\n<tr>";
         } else {
           // Headers
           toBeHTML += htmlHeaders;
-          toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + inTableObject.meta.axisName + ':' + i + "</th>" + makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
+          toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + formatHeaderName(inTableObject.meta.axisName, i) + "</th>" + makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
           toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
         }
         evenNotOdd = !evenNotOdd;
@@ -218,7 +261,7 @@ PivotTable.makeHTML = (function () {
         } else {
           htmlHeaders += "<th>";
         }
-        htmlHeaders += colHeaders[column].axisName + ':' + col.bucketName + "</th>\n";
+        htmlHeaders += formatHeaderName(colHeaders[column].axisName, col.bucketName) + "</th>\n";
       }
       htmlHeaders += "</tr>\n";
     }
