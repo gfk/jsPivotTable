@@ -47,7 +47,16 @@ html, body {
 .pivotTable th {
   background: rgb(90%,90%,100%);
   padding: 2px;
+  text-align: left;
+  vertical-align:text-top;
 }
+
+/*.vertical {
+  background-color:red;
+  display: block;
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+}*/
 
 .pivotTable tr {
   background: white;
@@ -108,5 +117,5 @@ th.total, td.total {
   border-top: 2px solid navy;
   font-style: italic;
   font-weight: bold;
-  text-align: right;
+  text-align: left;
 }
