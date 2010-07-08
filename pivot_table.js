@@ -187,21 +187,8 @@ if (!Array.prototype.map) {
 }
 
 PivotTable.makeHTML = (function () {
-  var formatHeaderName = function (axis, name) {
-    if (axis === "TOUR") {
-      return "Tour " + name;
-    } else if (axis === "ANSES") {
-      return name;
-    } else if (axis === "COL") {
-      return name;
-    } else if (axis === "PROG") {
-      return name;
-    } else {
-      return axis + "::" + name;
-    }
-  };
-  
   var htmlHeaders  = "";
+  var formatHeaderName;
   var makeHTMLData = function (inTableObject, colspanValue) {
     var toBeHTML   = "",
         classe     = "",
@@ -227,9 +214,10 @@ PivotTable.makeHTML = (function () {
           toBeHTML += "</tr>\n<tr>";
         } else {
           // Headers
-          toBeHTML += htmlHeaders;
-          toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\">" + formatHeaderName(inTableObject.meta.axisName, i) + "</th>" + makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
-          toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': i, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
+          //toBeHTML += htmlHeaders;
+          var formattedHeaderName = formatHeaderName(inTableObject.meta.axisName, i);
+          toBeHTML += "<th rowspan=\"" + inTableObject[i].meta.nbElements + "\"><div class=\"vertical\">" + formattedHeaderName + "</div></th>" + makeHTMLData(inTableObject[i], colspanValue - 1) + "</tr>\n";
+          toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': formattedHeaderName, 'value': inTableObject[i].meta.total} }, colspanValue - 1) + "</tr>\n";
         }
         evenNotOdd = !evenNotOdd;
       }
@@ -237,7 +225,8 @@ PivotTable.makeHTML = (function () {
     return toBeHTML.substring(0, toBeHTML.length - 4);
   };
   
-  return function (inTableObject, tableDiv) {
+  return function (inTableObject, tableDiv, formatter) {
+    formatHeaderName = formatter;
     var toBeHTML = "";
     
     // Open table
@@ -265,6 +254,7 @@ PivotTable.makeHTML = (function () {
       }
       htmlHeaders += "</tr>\n";
     }
+    toBeHTML += htmlHeaders;
     
     // Table data
     toBeHTML += makeHTMLData(inTableObject, rowHeaders.length + 1);
@@ -386,11 +376,11 @@ PivotTable.prototype.generateTableObject = function (callback) {
 // PivotTable.display()
 //   public method
 // -------------------------------------------------------------------
-PivotTable.prototype.display = function () {
+PivotTable.prototype.display = function (formatter) {
   var el = document.getElementById(this.divId);
   this.generateTableObject(
     function (TO) {
-      PivotTable.makeHTML(TO, el);
+      PivotTable.makeHTML(TO, el, formatter);
     }
   );
 };
