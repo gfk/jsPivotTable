@@ -229,8 +229,6 @@ PivotTable.makeHTML = (function () {
     formatHeaderName = formatter;
     var toBeHTML = "";
     
-    // Open table
-    toBeHTML += "<table class=\"pivotTable\">\n<tbody>";
     
     // Table headers
     htmlHeaders = "<tr>";
@@ -254,6 +252,9 @@ PivotTable.makeHTML = (function () {
       }
       htmlHeaders += "</tr>\n";
     }
+    
+    // Open table
+    toBeHTML += "<table class=\"pivotTable\">\n<tbody>";
     toBeHTML += htmlHeaders;
     
     // Table data
@@ -264,10 +265,7 @@ PivotTable.makeHTML = (function () {
     // Close the table
     toBeHTML += "</tbody>\n</table>\n";
     
-    var callbackFct = function () {
-      tableDiv.innerHTML = toBeHTML;
-    };
-    setTimeout(callbackFct, 0); // We do this to avoid stoping the browser for too long.
+    tableDiv.innerHTML = toBeHTML
   };
 }());
 
@@ -351,25 +349,14 @@ PivotTable.prototype.generateTableObject = function (callback) {
     offsetOfColumn[i] = PivotTable.getIndexOfElementInArray(this.columnAxes[i], this.dataVortex.axisList);
   }
   
-  var gTO = function () {
-    var tableObject = that.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, 0, false);
+  var tableObject = that.addRowsToTableObject(offsetOfRow, offsetOfColumn, pti, 0, false);
   
-    tableObject.meta.colHeaders = colHeaders;
-    tableObject.meta.rowHeaders = rowHeaders;
-    
-    var pTO = function () {
-      PivotTable.prepareTableObject(tableObject);
-      
-      var callbackFct = function () {
-        callback(tableObject);
-      };
-      setTimeout(callbackFct, 0);
-    };
-    
-    setTimeout(pTO, 0);
-  };
+  tableObject.meta.colHeaders = colHeaders;
+  tableObject.meta.rowHeaders = rowHeaders;
   
-  setTimeout(gTO, 0); // We do this to avoid stoping the browser for too long.
+  PivotTable.prepareTableObject(tableObject);
+    
+  callback(tableObject);
 };
 
 // -------------------------------------------------------------------
