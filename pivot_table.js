@@ -48,11 +48,11 @@ PivotTable.listOfPivotTables = [];
 // new PivotTable()
 //   public constructor
 // -------------------------------------------------------------------
-function PivotTable(divId, dataVortex, rowAxes, columnAxes) {
+function PivotTable(dataVortex, rowAxes, columnAxes) {
 
   // Properties
-  this.divId = divId;
-  this.layoutButtonId = PivotTable.LAYOUT_BUTTON_ID_PREFIX + this.divId;
+  this.mtableObject = undefined;
+  this.layoutButtonId = PivotTable.LAYOUT_BUTTON_ID_PREFIX;
   this.dataVortex = dataVortex;
   this.rowAxes = rowAxes;
   this.columnAxes = columnAxes;
@@ -186,7 +186,7 @@ if (!Array.prototype.map) {
   };
 }
 
-PivotTable.makeHTML = (function () {
+PivotTable.prototype.makeHTML = (function () {
   var htmlHeaders  = "";
   var formatHeaderName;
   var makeHTMLData = function (inTableObject, colspanValue) {
@@ -195,7 +195,7 @@ PivotTable.makeHTML = (function () {
         evenNotOdd = true,
         notzero    = function (a) {
           if (a !== 0) {
-            return a
+            return a;
           } else {
             return "";
           }
@@ -225,15 +225,18 @@ PivotTable.makeHTML = (function () {
     return toBeHTML.substring(0, toBeHTML.length - 4);
   };
   
-  return function (inTableObject, tableDiv, formatter) {
+  return function (formatter) {
     formatHeaderName = formatter;
     var toBeHTML = "";
     
+    if (this.mtableObject === undefined) {
+      this.generateTableObject();
+    }
     
     // Table headers
     htmlHeaders = "<tr>";
-    var rowHeaders = inTableObject.meta.rowHeaders;
-    var colHeaders = inTableObject.meta.colHeaders;
+    var rowHeaders = this.mTableObject.meta.rowHeaders;
+    var colHeaders = this.mTableObject.meta.colHeaders;
     for (var row = 0, leng = rowHeaders.length; row < leng; row += 1) {
       htmlHeaders += "<th rowspan=\"" + colHeaders.length + "\">" + rowHeaders[row].axisName + "</th>\n";
     }
@@ -258,14 +261,14 @@ PivotTable.makeHTML = (function () {
     toBeHTML += htmlHeaders;
     
     // Table data
-    toBeHTML += makeHTMLData(inTableObject, rowHeaders.length + 1);
+    toBeHTML += makeHTMLData(this.mTableObject, rowHeaders.length + 1);
     
-    toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': "Grand", 'value': inTableObject.meta.total} }, rowHeaders.length) + "</tr>\n";
+    toBeHTML += "<tr>" + makeHTMLData({ 'total' : { 'name': "Grand", 'value': this.mTableObject.meta.total} }, rowHeaders.length) + "</tr>\n";
     
     // Close the table
     toBeHTML += "</tbody>\n</table>\n";
     
-    tableDiv.innerHTML = toBeHTML
+    return toBeHTML;
   };
 }());
 
@@ -273,7 +276,7 @@ PivotTable.makeHTML = (function () {
 // PivotTable.generateTableObject()
 //   public method
 // -------------------------------------------------------------------
-PivotTable.prototype.generateTableObject = function (callback) {
+PivotTable.prototype.generateTableObject = function () {
   var copyColumnAxes = function (ca) {
     var colAxes = [];
     for (var i = 0, l = ca.length; i < l; i += 1) {
@@ -356,20 +359,7 @@ PivotTable.prototype.generateTableObject = function (callback) {
   
   PivotTable.prepareTableObject(tableObject);
     
-  callback(tableObject);
-};
-
-// -------------------------------------------------------------------
-// PivotTable.display()
-//   public method
-// -------------------------------------------------------------------
-PivotTable.prototype.display = function (formatter) {
-  var el = document.getElementById(this.divId);
-  this.generateTableObject(
-    function (TO) {
-      PivotTable.makeHTML(TO, el, formatter);
-    }
-  );
+  this.mTableObject = tableObject;
 };
 
 // -------------------------------------------------------------------
@@ -462,7 +452,7 @@ PivotTable.prototype.getAxisSelectionMenuHTML = function (rowNumber, columnNumbe
   if (columnNumber !== null) {
     selectedAxis = this.columnAxes[columnNumber];
   }
-  var selectionMenuId = PivotTable.SELECT_MENU_ID_PREFIX + this.divId + "_" + rowNumber + "_" + columnNumber;
+  var selectionMenuId = PivotTable.SELECT_MENU_ID_PREFIX + "_" + rowNumber + "_" + columnNumber;
   var returnString = "<select id=\"" + selectionMenuId + "\" name=\"" + selectionMenuId + "\" row=\"" + rowNumber + "\" column=\"" + columnNumber + "\">";
   var selectedText;
   for (var i = 0, l = this.dataVortex.axisList.length; i < l; i += 1) {
@@ -494,7 +484,7 @@ PivotTable.prototype.getMoveAxisButtonHTML = function (rowNumber, columnNumber) 
     selectedAxis = this.columnAxes[columnNumber];
     buttonLabel = "column -> row";
   }
-  var buttonId = PivotTable.MOVE_AXIS_BUTTON_ID_PREFIX + this.divId + "_" + rowNumber + "_" + columnNumber;
+  var buttonId = PivotTable.MOVE_AXIS_BUTTON_ID_PREFIX + "_" + rowNumber + "_" + columnNumber;
   var returnString = "<input type=\"button\" class=\"moveAxisButton\" id=\"" + buttonId + "\" name=\"" + buttonId + "\" row=\"" + rowNumber + "\" column=\"" + columnNumber + "\" value=\"" + buttonLabel + "\" onclick=\"PivotTable.clickOnMoveAxisButton(event)\"></input>";
 
   PivotTable.listOfPivotTables[buttonId] = this;
