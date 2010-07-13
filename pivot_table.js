@@ -188,7 +188,14 @@ if (!Array.prototype.map) {
 
 PivotTable.prototype.makeHTML = (function () {
   var htmlHeaders  = "";
-  var formatHeaderName;
+  var ref;
+  var formatHeaderName = function (axis, name) {
+    if (ref[axis] !== undefined && ref[axis][name] !== undefined) {
+      return ref[axis][name];
+    } else {
+      return axis + ":" + name;
+    } 
+  };
   var makeHTMLData = function (inTableObject, colspanValue) {
     var toBeHTML   = "",
         classe     = "",
@@ -226,7 +233,7 @@ PivotTable.prototype.makeHTML = (function () {
   };
   
   return function (formatter) {
-    formatHeaderName = formatter;
+    ref = formatter;
     var toBeHTML = "";
     
     if (this.mtableObject === undefined) {
@@ -237,8 +244,9 @@ PivotTable.prototype.makeHTML = (function () {
     htmlHeaders = "<tr>";
     var rowHeaders = this.mTableObject.meta.rowHeaders;
     var colHeaders = this.mTableObject.meta.colHeaders;
+    
     for (var row = 0, leng = rowHeaders.length; row < leng; row += 1) {
-      htmlHeaders += "<th rowspan=\"" + colHeaders.length + "\">" + rowHeaders[row].axisName + "</th>\n";
+      htmlHeaders += "<th rowspan=\"" + colHeaders.length + "\">" + formatHeaderName(rowHeaders[row].axisName, "meta.name") + "</th>\n";
     }
     for (var column = 0, len = colHeaders.length; column < len; column += 1) {
       if (column > 0) {
