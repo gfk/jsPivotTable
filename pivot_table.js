@@ -110,6 +110,24 @@ PivotTable.prepareTableObject = (function () {
     return ((typeof value === 'object') && (value) && (value instanceof Array));
   };
   
+  var mergeTotals = function (cellData) {
+    if (is_array(cellData[0])) {
+      // Multi-level cellData, we need to merge this and calculate totals
+      var baseArray = [], total = [];
+      for (var l = 0, o = cellData.length; l < o; l += 1) {
+        // Calculate row totals
+        for (var p = 0, q = cellData[l].length; p < q; p += 1) {
+          total[p]  = total[p] || 0;
+          total[p] += cellData[l][p];
+        }
+        baseArray = baseArray.concat(cellData[l]);
+      }
+      return mergeTotals(baseArray.concat(total)); // Recursion
+    } else {
+      return cellData; // Base case
+    }
+  };
+  
   return function (inTableObject) {
     var meta = inTableObject.meta || {};
     meta.nbElements = 0;
@@ -119,19 +137,7 @@ PivotTable.prepareTableObject = (function () {
         meta.nbElements += 1;
         if (inTableObject[i].cellData !== undefined) { // Base case
           var empty = true;
-          if (is_array(inTableObject[i].cellData[0])) {
-            // Multi-level cellData, we need to merge this and calculate totals
-            var baseArray = [], total = [];
-            for (var l = 0, o = inTableObject[i].cellData.length; l < o; l += 1) {
-              // Calculate row totals
-              for (var p = 0, q = inTableObject[i].cellData[l].length; p < q; p += 1) {
-                total[p]  = total[p] || 0;
-                total[p] += inTableObject[i].cellData[l][p];
-              }
-              baseArray = baseArray.concat(inTableObject[i].cellData[l]);
-            }
-            inTableObject[i].cellData = baseArray.concat(total);
-          }
+          inTableObject[i].cellData = mergeTotals(inTableObject[i].cellData);
           for (var j = 0, n = inTableObject[i].cellData.length; j < n; j += 1) {
             // Calculate col totals
             meta.total[j] = meta.total[j] || 0;
